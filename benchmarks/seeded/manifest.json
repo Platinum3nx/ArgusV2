@@ -1,0 +1,20 @@
+{
+  "version": "1.0.0",
+  "cases": [
+    {
+      "id": "vuln_withdraw_no_bounds",
+      "path": "vulnerable/negative_withdrawal.py",
+      "expected": "blocking"
+    },
+    {
+      "id": "safe_saturating_withdraw",
+      "path": "safe/saturating_withdrawal.py",
+      "expected": "supported"
+    },
+    {
+      "id": "drift_uniqueness_probe",
+      "path": "drift/uniqueness_probe.py",
+      "expected": "semantic_guard_failure"
+    }
+  ]
+}

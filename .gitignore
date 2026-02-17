@@ -25,6 +25,12 @@ frontend/coverage/
 # Output
 output/
 tmp/
+.argus-trace/
+argus_report.json
+argus-sarif-report.json
+gl-sast-report.json
+argus-ci-gates.json
+Argus_Audit_Report.md
 
 # Lean
 .lake/

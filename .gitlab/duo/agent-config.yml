@@ -1,0 +1,7 @@
+image: argus-v2:2.0.0
+setup_script:
+  - pip install -r requirements.txt
+cache:
+  paths:
+    - lean_project/.lake/
+    - .argus-cache/

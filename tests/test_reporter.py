@@ -1,5 +1,12 @@
 from src.core.models import AssumedInput, Obligation, Verdict
-from src.core.reporter import FileReport, render_json_report, render_markdown_report, render_mr_comment
+from src.core.reporter import (
+    FileReport,
+    render_gitlab_sast_report,
+    render_json_report,
+    render_markdown_report,
+    render_mr_comment,
+    render_sarif_report,
+)
 
 
 def _report() -> FileReport:
@@ -46,3 +53,23 @@ def test_render_mr_comment() -> None:
     assert "Argus Formal Verification Report" in text
     assert "withdraw.py" in text
 
+
+def test_render_sarif_report_filters_verified_findings() -> None:
+    sarif = render_sarif_report([_report()])
+    assert sarif["version"] == "2.1.0"
+    assert sarif["runs"][0]["results"] == []
+
+
+def test_render_gitlab_sast_report_includes_vulnerable_entries() -> None:
+    vulnerable = FileReport(
+        filename="auth.py",
+        verdict=Verdict.VULNERABLE,
+        obligations=[],
+        assumptions=[],
+        engine="lean",
+        message="State transition can bypass authorization checks",
+    )
+    report = render_gitlab_sast_report([vulnerable])
+    assert report["version"] == "15.0.7"
+    assert len(report["vulnerabilities"]) == 1
+    assert report["vulnerabilities"][0]["location"]["file"] == "auth.py"

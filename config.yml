@@ -1,0 +1,3 @@
+display_name: "Argus Formal Verification"
+description: "Autonomous formal verification agent that mathematically proves Python code safety properties using Lean 4, Dafny, and Gemini."
+version: "2.0.0"

@@ -1,0 +1,21 @@
+stages:
+  - verify
+
+argus-verify:
+  stage: verify
+  image: argus-v2:2.0.0
+  script:
+    - python -m src.adapters.cli --repo-path . --mode ci
+  artifacts:
+    when: always
+    reports:
+      sast: gl-sast-report.json
+    paths:
+      - Argus_Audit_Report.md
+      - argus_report.json
+      - argus-sarif-report.json
+      - gl-sast-report.json
+      - argus-ci-gates.json
+      - .argus-trace/
+  rules:
+    - if: $CI_MERGE_REQUEST_IID
