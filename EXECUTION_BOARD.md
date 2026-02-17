@@ -35,15 +35,15 @@
   - [x] Commit + push milestone
 
 ### Milestone 3: Staged Quality Gates
-- Status: `IN_PROGRESS`
+- Status: `COMPLETED`
 - Objective: Enforce CI-style integrity checks for Phase 1+2 deliverable.
 - Tasks:
-  - [ ] Determinism checks for canonical obligation hashing
-  - [ ] Assumption evidence coverage gate
-  - [ ] Unsupported construct fail-closed behavior tests
-  - [ ] Reproducibility test harness
-  - [ ] Mutation gate baseline
-  - [ ] Commit + push milestone
+  - [x] Determinism checks for canonical obligation hashing
+  - [x] Assumption evidence coverage gate
+  - [x] Unsupported construct fail-closed behavior tests
+  - [x] Reproducibility test harness
+  - [x] Mutation gate baseline
+  - [x] Commit + push milestone
 
 ## Risks / Blockers
 - Lean/Dafny binaries may be unavailable locally; verifier tests will mock subprocess.
@@ -53,3 +53,4 @@
 - 2026-02-17: Sprint started. Board created and milestone plan established.
 - 2026-02-17: Milestone 1 completed. Added trusted core modules and tests (`16 passed`).
 - 2026-02-17: Milestone 2 completed. Added pipeline, translators/verifiers, repair, reporter, CLI, and expanded tests (`31 passed`).
+- 2026-02-17: Milestone 3 completed. Added staged quality gates and gate tests (`37 passed`).
