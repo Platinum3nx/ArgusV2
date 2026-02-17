@@ -5,9 +5,13 @@ import os
 import re
 from dataclasses import dataclass
 from pathlib import Path
+from types import SimpleNamespace
 from typing import List
 
-from google import genai
+try:
+    from google import genai
+except Exception:  # pragma: no cover - optional dependency in test envs
+    genai = SimpleNamespace(Client=None)
 
 from .assumption_evidence import validate_assumptions
 from .models import AssumedInput, Obligation, Severity
@@ -56,6 +60,8 @@ class InvariantDiscovery:
     def _query_llm(self, python_code: str) -> str:
         api_key = os.getenv("GEMINI_API_KEY")
         if not api_key:
+            return ""
+        if getattr(genai, "Client", None) is None:
             return ""
 
         prompt = self._load_prompt()
@@ -118,4 +124,3 @@ def _extract_json(text: str) -> dict:
             return json.loads(candidate)
         except json.JSONDecodeError:
             return {}
-

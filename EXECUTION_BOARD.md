@@ -22,20 +22,20 @@
   - [x] Commit + push milestone
 
 ### Milestone 2: Pipeline + Translation/Verification + Reporting
-- Status: `IN_PROGRESS`
+- Status: `COMPLETED`
 - Objective: End-to-end core pipeline with trace artifacts and report generation.
 - Tasks:
-  - [ ] Implement translator interfaces + AST/LLM/Dafny translators
-  - [ ] Implement verifier interfaces + Lean/Dafny verifiers + router
-  - [ ] Implement invariant discovery + repair modules
-  - [ ] Implement pipeline orchestration
-  - [ ] Implement reporter (JSON/Markdown)
-  - [ ] Implement CLI adapter
-  - [ ] Add end-to-end and module tests
-  - [ ] Commit + push milestone
+  - [x] Implement translator interfaces + AST/LLM/Dafny translators
+  - [x] Implement verifier interfaces + Lean/Dafny verifiers + router
+  - [x] Implement invariant discovery + repair modules
+  - [x] Implement pipeline orchestration
+  - [x] Implement reporter (JSON/Markdown)
+  - [x] Implement CLI adapter
+  - [x] Add end-to-end and module tests
+  - [x] Commit + push milestone
 
 ### Milestone 3: Staged Quality Gates
-- Status: `PENDING`
+- Status: `IN_PROGRESS`
 - Objective: Enforce CI-style integrity checks for Phase 1+2 deliverable.
 - Tasks:
   - [ ] Determinism checks for canonical obligation hashing
@@ -52,3 +52,4 @@
 ## Progress Log
 - 2026-02-17: Sprint started. Board created and milestone plan established.
 - 2026-02-17: Milestone 1 completed. Added trusted core modules and tests (`16 passed`).
+- 2026-02-17: Milestone 2 completed. Added pipeline, translators/verifiers, repair, reporter, CLI, and expanded tests (`31 passed`).

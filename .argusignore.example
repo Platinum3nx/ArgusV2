@@ -1,0 +1,11 @@
+# Ignore tests
+tests/
+
+# Ignore generated files
+*_pb2.py
+migrations/
+
+# Ignore local scratch
+tmp/
+output/
+
