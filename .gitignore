@@ -1,0 +1,30 @@
+.env
+backend/.env
+venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# System
+.DS_Store
+.idea/
+.vscode/
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Frontend specific
+frontend/.next/
+frontend/out/
+frontend/build/
+frontend/coverage/
+
+# Output
+output/
+tmp/
+
+# Lean
+.lake/
