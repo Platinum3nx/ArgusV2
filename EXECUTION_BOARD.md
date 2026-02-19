@@ -78,3 +78,5 @@
 - 2026-02-17: Milestone 3 completed. Added staged quality gates and gate tests (`37 passed`).
 - 2026-02-17: Phase 3 implementation started with agent team split (GitLab adapter, CI gate runner, Duo/CI configs, QA).
 - 2026-02-17: Added GitLab adapter, SARIF + GitLab SAST outputs, CI integrity suite, seeded benchmark corpus, and new tests (`43 passed`).
+- 2026-02-19: Updated GitLab CI to build/push Argus image natively with Kaniko and run verification from commit-tagged registry image.
+- 2026-02-19: Updated Duo agent config to GitLab Container Registry image and Catalog metadata to `Argus Verified Repair`.

@@ -1,11 +1,37 @@
 stages:
+  - build
   - verify
+
+variables:
+  ARGUS_IMAGE: "$CI_REGISTRY_IMAGE/argus-v2:$CI_COMMIT_SHA"
+
+build-argus-image:
+  stage: build
+  image:
+    name: gcr.io/kaniko-project/executor:v1.23.2-debug
+    entrypoint: [""]
+  script:
+    - mkdir -p /kaniko/.docker
+    - >
+      echo "{\"auths\":{\"${CI_REGISTRY}\":{\"username\":\"${CI_REGISTRY_USER}\",\"password\":\"${CI_REGISTRY_PASSWORD}\"}}}"
+      > /kaniko/.docker/config.json
+    - >
+      /kaniko/executor
+      --context "${CI_PROJECT_DIR}"
+      --dockerfile "${CI_PROJECT_DIR}/Dockerfile"
+      --destination "${ARGUS_IMAGE}"
+      --destination "${CI_REGISTRY_IMAGE}/argus-v2:latest"
+  rules:
+    - if: $CI_MERGE_REQUEST_IID
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
 
 argus-verify:
   stage: verify
-  image: argus-v2:2.0.0
+  image: "$ARGUS_IMAGE"
+  needs:
+    - job: build-argus-image
   script:
-    - python -m src.adapters.cli --repo-path . --mode ci
+    - python -m src.adapters.cli --repo-path . --mode ci --base-ref "${CI_MERGE_REQUEST_DIFF_BASE_SHA:-}"
   artifacts:
     when: always
     reports:

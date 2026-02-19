@@ -1,6 +1,4 @@
-image: argus-v2:2.0.0
-setup_script:
-  - pip install -r requirements.txt
+image: registry.gitlab.com/platinum3nx/argusv2/argus-v2:latest
 cache:
   paths:
     - lean_project/.lake/
