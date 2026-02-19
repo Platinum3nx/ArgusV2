@@ -1,0 +1,36 @@
+.env
+backend/.env
+venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# System
+.DS_Store
+.idea/
+.vscode/
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Frontend specific
+frontend/.next/
+frontend/out/
+frontend/build/
+frontend/coverage/
+
+# Output
+output/
+tmp/
+.argus-trace/
+argus_report.json
+argus-sarif-report.json
+gl-sast-report.json
+argus-ci-gates.json
+Argus_Audit_Report.md
+
+# Lean
+.lake/

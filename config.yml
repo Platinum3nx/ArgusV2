@@ -1,0 +1,3 @@
+display_name: "Argus Verified Repair"
+description: "A neuro-symbolic DevSecOps agent that uses Gemini 3 and Lean 4 to mathematically prove security fixes before merging."
+version: "2.0.0"

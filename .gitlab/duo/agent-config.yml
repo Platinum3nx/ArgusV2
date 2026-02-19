@@ -1,0 +1,5 @@
+image: registry.gitlab.com/platinum3nx/argusv2/argus-v2:latest
+cache:
+  paths:
+    - lean_project/.lake/
+    - .argus-cache/
