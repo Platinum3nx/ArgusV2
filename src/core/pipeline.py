@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import List
 
 from .assumption_evidence import validate_assumptions
+from .equivalence import run_equivalence_check
 from .invariant_discovery import InvariantDiscovery
 from .models import AssumedInput, Obligation, VerificationSummary, Verdict
 from .obligation_policy import ObligationPolicy
@@ -161,11 +162,38 @@ class ArgusPipeline:
                 )
             )
 
+        equivalence = (
+            run_equivalence_check(python_code)
+            if translation.language == "lean"
+            else None
+        )
+        if equivalence is not None:
+            self._write_json(
+                trace_dir / "02_equivalence.json",
+                {
+                    "passed": equivalence.passed,
+                    "cases_checked": equivalence.cases_checked,
+                    "issues": [
+                        {
+                            "function": item.function,
+                            "inputs": item.inputs,
+                            "python_result": item.python_result,
+                            "ir_result": item.ir_result,
+                            "reason": item.reason,
+                        }
+                        for item in equivalence.issues
+                    ],
+                },
+            )
+
         guard = run_semantic_guard(python_code, translation.code, policy.obligations)
+        semantic_guard_passed = guard.passed and (equivalence.passed if equivalence is not None else True)
         self._write_json(
             trace_dir / "02_semantic_guard.json",
             {
-                "passed": guard.passed,
+                "passed": semantic_guard_passed,
+                "rule_guard_passed": guard.passed,
+                "equivalence_passed": equivalence.passed if equivalence is not None else None,
                 "issues": [{"code": issue.code, "message": issue.message} for issue in guard.issues],
             },
         )
@@ -181,7 +209,7 @@ class ArgusPipeline:
             obligation_results=verification.obligation_results,
             assumptions_valid=assumptions_valid,
             unsupported_constructs=[],
-            semantic_guard_passed=guard.passed,
+            semantic_guard_passed=semantic_guard_passed,
             verification_error=verification.verification_error,
             repaired=False,
         )
@@ -222,13 +250,27 @@ class ArgusPipeline:
 
             if proof_search.success and proof_search.proof_code:
                 search_guard = run_semantic_guard(python_code, proof_search.proof_code, policy.obligations)
+                search_equivalence = (
+                    run_equivalence_check(python_code)
+                    if translation.language == "lean"
+                    else None
+                )
                 search_verification = self.lean_verifier.verify(
                     proof_search.proof_code, policy.obligations
                 )
                 self._write_json(
                     trace_dir / "03b_proof_search_guard.json",
                     {
-                        "passed": search_guard.passed,
+                        "passed": search_guard.passed
+                        and (
+                            search_equivalence.passed
+                            if search_equivalence is not None
+                            else True
+                        ),
+                        "rule_guard_passed": search_guard.passed,
+                        "equivalence_passed": search_equivalence.passed
+                        if search_equivalence is not None
+                        else None,
                         "issues": [
                             {"code": issue.code, "message": issue.message}
                             for issue in search_guard.issues
@@ -244,7 +286,12 @@ class ArgusPipeline:
                     obligation_results=search_verification.obligation_results,
                     assumptions_valid=assumptions_valid,
                     unsupported_constructs=[],
-                    semantic_guard_passed=search_guard.passed,
+                    semantic_guard_passed=search_guard.passed
+                    and (
+                        search_equivalence.passed
+                        if search_equivalence is not None
+                        else True
+                    ),
                     verification_error=search_verification.verification_error,
                     repaired=False,
                 )

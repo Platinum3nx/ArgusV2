@@ -13,6 +13,7 @@ from .quality_gates import (
     obligation_determinism_gate,
 )
 from .reporter import FileReport
+from .equivalence import run_equivalence_check
 from .semantic_guard import run_semantic_guard
 from .translator import ASTTranslator, DafnyTranslator
 
@@ -57,6 +58,7 @@ def run_ci_integrity_suite(
     determinism_failures: List[str] = []
     assumption_failures: List[str] = []
     semantic_failures: List[str] = []
+    equivalence_failures: List[str] = []
     proof_failures: List[str] = []
     verdict_failures: List[str] = []
     reproducibility_failures: List[str] = []
@@ -111,6 +113,12 @@ def run_ci_integrity_suite(
                     semantic_failures.append(
                         f"{filename}:{','.join(issue.code for issue in guard.issues)}"
                     )
+            if not _contains_loop(code):
+                equivalence = run_equivalence_check(code)
+                if not equivalence.passed:
+                    equivalence_failures.append(
+                        f"{filename}:{';'.join(issue.reason for issue in equivalence.issues)}"
+                    )
 
         if report.verdict not in {Verdict.VERIFIED, Verdict.FIXED}:
             proof_failures.append(f"{filename}:{report.verdict.value}")
@@ -143,6 +151,11 @@ def run_ci_integrity_suite(
             name="semantic-guard-gate",
             passed=not semantic_failures,
             details="ok" if not semantic_failures else "; ".join(sorted(semantic_failures)),
+        ),
+        CIGateResult(
+            name="equivalence-gate",
+            passed=not equivalence_failures,
+            details="ok" if not equivalence_failures else "; ".join(sorted(equivalence_failures)),
         ),
         CIGateResult(
             name="proof-gate",
