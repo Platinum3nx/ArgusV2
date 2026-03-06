@@ -10,6 +10,7 @@ from .assumption_evidence import validate_assumptions
 from .invariant_discovery import InvariantDiscovery
 from .models import AssumedInput, Obligation, VerificationSummary, Verdict
 from .obligation_policy import ObligationPolicy
+from .proof_search import ProofSearchEngine
 from .repair import RepairEngine
 from .reporter import FileReport
 from .semantic_guard import run_semantic_guard
@@ -23,8 +24,10 @@ from .verifier import DafnyVerifier, LeanVerifier, VerifierRouter
 class PipelineConfig:
     model: str = "gemini-2.5-pro"
     max_repair_attempts: int = 3
+    max_proof_search_attempts: int = 3
     trace_root: str = ".argus-trace"
     allow_repair: bool = True
+    allow_proof_search: bool = True
     require_docker_verify: bool = True
 
 
@@ -47,6 +50,10 @@ class ArgusPipeline:
         self.repair = RepairEngine(
             model=self.config.model,
             max_attempts=self.config.max_repair_attempts,
+        )
+        self.proof_search = ProofSearchEngine(
+            model=self.config.model,
+            max_attempts=self.config.max_proof_search_attempts,
         )
         self.ast_translator = ASTTranslator()
         self.llm_translator = LLMTranslator(model=self.config.model)
@@ -180,6 +187,80 @@ class ArgusPipeline:
         )
         decision = compute_verdict(summary)
 
+        if (
+            decision.verdict == Verdict.VULNERABLE
+            and self.config.allow_proof_search
+            and translation.language == "lean"
+            and not verification.verification_error
+        ):
+            proof_search = self.proof_search.search(
+                lean_code=translation.code,
+                obligations=policy.obligations,
+                verifier_error=verification.error_message or verification.raw_output,
+            )
+            self._write_json(
+                trace_dir / "03a_proof_search.json",
+                {
+                    "success": proof_search.success,
+                    "attempts": [
+                        {
+                            "attempt": item.attempt,
+                            "success": item.success,
+                            "reason": item.reason,
+                            "has_candidate_code": bool(item.candidate_code),
+                        }
+                        for item in proof_search.attempts
+                    ],
+                },
+            )
+            for item in proof_search.attempts:
+                if item.candidate_code:
+                    self._write_text(
+                        trace_dir / f"03a_proof_search_attempt_{item.attempt}.lean",
+                        item.candidate_code,
+                    )
+
+            if proof_search.success and proof_search.proof_code:
+                search_guard = run_semantic_guard(python_code, proof_search.proof_code, policy.obligations)
+                search_verification = self.lean_verifier.verify(
+                    proof_search.proof_code, policy.obligations
+                )
+                self._write_json(
+                    trace_dir / "03b_proof_search_guard.json",
+                    {
+                        "passed": search_guard.passed,
+                        "issues": [
+                            {"code": issue.code, "message": issue.message}
+                            for issue in search_guard.issues
+                        ],
+                    },
+                )
+                self._write_text(
+                    trace_dir / "03b_proof_search_verify_stdout.txt",
+                    search_verification.raw_output or search_verification.error_message,
+                )
+
+                search_summary = VerificationSummary(
+                    obligation_results=search_verification.obligation_results,
+                    assumptions_valid=assumptions_valid,
+                    unsupported_constructs=[],
+                    semantic_guard_passed=search_guard.passed,
+                    verification_error=search_verification.verification_error,
+                    repaired=False,
+                )
+                search_decision = compute_verdict(search_summary)
+                if search_decision.verdict in {Verdict.VERIFIED, Verdict.FIXED}:
+                    return finalize(
+                        PipelineResult(
+                            filename=filename,
+                            verdict=Verdict.VERIFIED,
+                            obligations=policy.obligations,
+                            assumptions=discovery.assumed_inputs,
+                            engine="lean",
+                            message="Verified after proof search",
+                        )
+                    )
+
         repaired_code: str | None = None
         if decision.verdict == Verdict.VULNERABLE and allow_repair and not verification.verification_error:
             repair_result = self.repair.repair(
@@ -288,7 +369,9 @@ class ArgusPipeline:
             "config": {
                 "model": self.config.model,
                 "max_repair_attempts": self.config.max_repair_attempts,
+                "max_proof_search_attempts": self.config.max_proof_search_attempts,
                 "allow_repair": self.config.allow_repair,
+                "allow_proof_search": self.config.allow_proof_search,
                 "require_docker_verify": self.config.require_docker_verify,
             },
         }

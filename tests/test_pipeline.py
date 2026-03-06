@@ -1,7 +1,9 @@
 from types import SimpleNamespace
 
 from src.core.pipeline import ArgusPipeline, PipelineConfig
-from src.core.models import Verdict
+from src.core.models import ObligationResult, Verdict
+from src.core.proof_search import ProofSearchResult
+from src.core.verifier.base import VerificationOutcome
 
 
 def test_pipeline_verified_path(monkeypatch, tmp_path) -> None:
@@ -38,3 +40,44 @@ def test_pipeline_unverified_on_unsupported_construct(tmp_path) -> None:
     )
     assert result.verdict == Verdict.UNVERIFIED
 
+
+def test_pipeline_accepts_verified_proof_search_candidate(tmp_path) -> None:
+    config = PipelineConfig(
+        allow_repair=False,
+        allow_proof_search=True,
+        require_docker_verify=False,
+        trace_root=str(tmp_path / ".argus-trace"),
+    )
+    pipeline = ArgusPipeline(config=config)
+
+    def _fake_verify(proof_code: str, obligations):
+        verified = "\n  linarith" in proof_code and "try linarith" not in proof_code
+        return VerificationOutcome(
+            engine="lean",
+            obligation_results=[
+                ObligationResult(
+                    obligation=item,
+                    verified=verified,
+                    engine="lean",
+                    message="" if verified else "failed",
+                )
+                for item in obligations
+            ],
+            raw_output="ok" if verified else "failed",
+            verification_error=False,
+            error_message="" if verified else "failed",
+        )
+
+    pipeline.lean_verifier.verify = _fake_verify
+    pipeline.proof_search.search = lambda **kwargs: ProofSearchResult(
+        success=True,
+        proof_code=kwargs["lean_code"].replace("try linarith", "linarith"),
+        attempts=[],
+    )
+
+    result = pipeline.run_file(
+        filename="withdraw.py",
+        python_code="def withdraw(balance: int, amount: int) -> int:\n    return balance - amount\n",
+    )
+    assert result.verdict == Verdict.VERIFIED
+    assert "proof search" in result.message.lower()
