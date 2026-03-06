@@ -66,29 +66,31 @@ class ObligationPolicy:
         obligations: List[Obligation] = []
         param_names = [arg.arg for arg in fn.args.args]
         param_set = {name.lower() for name in param_names}
+        body_nodes = [node for stmt in fn.body for node in ast.walk(stmt)]
+        returns_numeric = self._returns_numeric(fn)
 
-        has_loop = any(isinstance(node, (ast.For, ast.While)) for node in ast.walk(fn))
-        has_subscript = any(isinstance(node, ast.Subscript) for node in ast.walk(fn))
+        has_loop = any(isinstance(node, (ast.For, ast.While)) for node in body_nodes)
+        has_subscript = any(isinstance(node, ast.Subscript) for node in body_nodes)
         has_minus = any(
             isinstance(node, ast.BinOp) and isinstance(node.op, ast.Sub)
-            for node in ast.walk(fn)
+            for node in body_nodes
         )
         has_list_append = any(
             isinstance(node, ast.Call)
             and isinstance(node.func, ast.Attribute)
             and node.func.attr == "append"
-            for node in ast.walk(fn)
+            for node in body_nodes
         )
         has_concat_append = any(
             isinstance(node, ast.BinOp)
             and isinstance(node.op, ast.Add)
             and isinstance(node.right, ast.List)
             and len(node.right.elts) == 1
-            for node in ast.walk(fn)
+            for node in body_nodes
         )
         has_state_hint = bool(param_set.intersection(STATE_HINT_NAMES))
 
-        if has_minus or param_set.intersection(NUMERIC_HINT_NAMES):
+        if returns_numeric and (has_minus or param_set.intersection(NUMERIC_HINT_NAMES)):
             obligations.append(
                 Obligation(
                     id=f"{fn.name}:non_negative_result",
@@ -145,3 +147,9 @@ class ObligationPolicy:
 
         return obligations
 
+    def _returns_numeric(self, fn: ast.FunctionDef) -> bool:
+        if fn.returns is None:
+            return True
+        if isinstance(fn.returns, ast.Name):
+            return fn.returns.id in {"int", "float", "Int", "Float"}
+        return False

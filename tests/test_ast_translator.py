@@ -19,6 +19,7 @@ def withdraw(balance: int, amount: int) -> int:
     assert outcome.success
     assert "def withdraw" in outcome.code
     assert "theorem withdraw_non_negative_result" in outcome.code
+    assert ": True := by" not in outcome.code
 
 
 def test_ast_translator_rejects_loops() -> None:
@@ -32,4 +33,3 @@ def total(xs: list[int]) -> int:
     outcome = ASTTranslator().translate(code, [], [])
     assert not outcome.success
     assert "Unsupported construct" in outcome.error
-
