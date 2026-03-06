@@ -14,7 +14,7 @@
     {
       "id": "drift_uniqueness_probe",
       "path": "drift/uniqueness_probe.py",
-      "expected": "semantic_guard_failure"
+      "expected": "blocking"
     }
   ]
 }

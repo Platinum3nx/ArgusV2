@@ -93,7 +93,7 @@ def _write_seeded_manifest(bench_root: Path) -> None:
                 "cases": [
                     {"path": "vulnerable/negative_withdrawal.py", "expected": "blocking"},
                     {"path": "safe/saturating_withdrawal.py", "expected": "supported"},
-                    {"path": "drift/uniqueness_probe.py", "expected": "semantic_guard_failure"},
+                    {"path": "drift/uniqueness_probe.py", "expected": "blocking"},
                 ]
             }
         ),

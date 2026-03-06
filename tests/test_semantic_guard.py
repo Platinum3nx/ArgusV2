@@ -31,7 +31,7 @@ def test_semantic_guard_passes_for_expected_encoding() -> None:
     ]
     translated = """
 def withdraw (balance amount : Int) : Int := balance - amount
-theorem withdraw_safe (balance amount : Int) : withdraw balance amount >= 0 := by
+theorem withdraw_non_negative_result (balance amount : Int) : withdraw balance amount >= 0 := by
   omega
 """
     result = run_semantic_guard(
@@ -59,3 +59,25 @@ def test_semantic_guard_detects_missing_function_symbol() -> None:
     assert not result.passed
     assert any(issue.code == "MISSING_FUNCTION_SYMBOL" for issue in result.issues)
 
+
+def test_semantic_guard_detects_trivial_theorem_goal() -> None:
+    obligations = [
+        Obligation(
+            id="withdraw:non_negative_result",
+            property="withdraw(...) >= 0",
+            category="non_negativity",
+            description="non-negative",
+        )
+    ]
+    translated = """
+def withdraw (balance amount : Int) : Int := balance - amount
+theorem withdraw_non_negative_result (balance amount : Int) : True := by
+  trivial
+"""
+    result = run_semantic_guard(
+        python_code="def withdraw(balance, amount): return balance - amount",
+        translated_code=translated,
+        obligations=obligations,
+    )
+    assert not result.passed
+    assert any(issue.code == "TRIVIAL_THEOREM_GOAL" for issue in result.issues)
