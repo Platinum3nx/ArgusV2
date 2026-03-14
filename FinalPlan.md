@@ -291,5 +291,91 @@ ArgusV2 is considered “finished product” for hackathon when all are true:
 
 ---
 
-## 9) Final Recommendation
-For this week, **optimize for reliability + explainability + deployment simplicity** over adding novel algorithms. You already have enough technical depth in the codebase; the winning move now is presenting it as a dependable, understandable, CI-native product with a credible path to enterprise adoption.
+## 9) Hackathon Criteria Alignment (GitLab Devpost)
+The official judging axes are:
+- Technological Implementation
+- Design & Usability
+- Potential Impact
+- Quality of the Idea
+
+### 9.1 Score-max strategy per axis
+
+#### A) Technological Implementation (Highest leverage)
+What judges want:
+- Strong code quality
+- Real use of GitLab Duo Agent Platform concepts (tools/triggers/context)
+- Working automation, not just chat output
+
+What ArgusV2 must show:
+- Triggered execution from GitLab events
+- Agent flow behavior: verify → diagnose → repair → re-verify → MR output
+- Reproducible CI artifacts and traceability
+- Public repo with clear license + setup instructions
+
+Deliverables to include:
+- Architecture diagram with trigger/action boundaries
+- One command / one pipeline runbook
+- Demo evidence showing actions taken automatically
+
+#### B) Design & Usability
+What judges want:
+- Easy install/config
+- Clear interaction model
+- Useful output for developers
+
+What ArgusV2 must show:
+- 10-minute quickstart path in README
+- Copy/paste env setup
+- MR comment format understandable by non-experts
+- Optional lightweight UI panel for status + verdict explanation
+
+Deliverables to include:
+- Quickstart section at top of README
+- Screenshot/GIF of MR output
+- "How to run demo in 3 steps" section
+
+#### C) Potential Impact
+What judges want:
+- Solves real bottleneck in SDLC (planning/security/ops)
+- Clear benefit to real teams
+
+What ArgusV2 must show:
+- Prevents real security regressions in critical code paths
+- Reduces review/debug toil
+- Fits naturally into existing GitLab CI workflows
+
+Deliverables to include:
+- Before/after workflow comparison
+- Time saved / risk reduction narrative
+- Target persona: platform + security + backend teams
+
+#### D) Quality of the Idea
+What judges want:
+- Novel and clearly differentiated concept
+- Better than existing alternatives
+
+What ArgusV2 must show:
+- Proof-backed autonomous repair loop (not generic AI suggestions)
+- Explicit soundness envelope and fail-closed contract
+- Practical path from hackathon prototype to enterprise pilot
+
+Deliverables to include:
+- "Why this is different" section in pitch + README
+- One-slide competitive positioning
+
+---
+
+## 10) Submission Compliance Checklist (Must Pass)
+Based on Devpost requirements, ensure all are complete before submission:
+
+- [ ] Public project URL inside GitLab AI Hackathon group
+- [ ] Source code + assets + runnable instructions in repository
+- [ ] Visible open-source license on repository page
+- [ ] Text project description on submission page
+- [ ] Public demo video (YouTube/Vimeo), <= 3 minutes judged window
+- [ ] At least one custom public agent or public flow created
+
+---
+
+## 11) Final Recommendation
+For this week, **optimize for reliability + explainability + deployment simplicity** over adding novel algorithms. You already have enough technical depth in the codebase; the winning move now is presenting it as a dependable, understandable, CI-native product with a credible path to enterprise adoption — and packaging it exactly against the Devpost judging rubric.
