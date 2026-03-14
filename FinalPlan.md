@@ -1,285 +1,378 @@
-# FinalPlan.md — ArgusV2 Final Product Plan (Hackathon-Winning + Startup-Grade)
+# FinalPlan.md — ArgusV2 Submission-Grade Execution Plan (Code Complete + Demo Ready)
 
-## 0) North Star
-Build ArgusV2 into a **category-defining autonomous DevSecOps product** that:
-1. Wins on hackathon judging criteria (technical depth, usability, impact, originality)
-2. Demonstrates a credible path to a **marketable startup product** for engineering/security teams
-3. Is compelling in both **backend architecture** and **frontend product experience**
+## 0) Mission
+Ship ArgusV2 as a **hackathon-winning, startup-grade product** that is:
+- fully functional in GitLab event-driven workflows
+- clearly aligned to Devpost judging and submission rules
+- polished enough for a 3-minute demo video
+- credible as a product engineering/security teams could pilot
 
-This plan assumes aggressive execution (vibe coding mode), prioritizing ambition and visible product quality.
-
----
-
-## 1) Product Definition (Final Form)
-ArgusV2 is an AI + formal methods platform that continuously protects security-critical code in Git workflows.
-
-### Core loop
-**Trigger → Analyze → Verify → Diagnose → Repair → Re-verify → Explain → Enforce**
-
-### Signature promise
-> “ArgusV2 doesn’t just suggest secure code. It proves safety properties before shipping.”
-
-### Product pillars
-- **Proof-backed trust**: deterministic policies + formal verification + fail-closed verdicts
-- **Autonomous action**: event-driven agent behavior, not chat-only interactions
-- **Developer-native UX**: high-signal MR feedback, clear risk context, minimal friction
-- **Enterprise readiness**: traceability, governance, compliance outputs, rollout controls
+This document is the single source of truth from now until submission.
 
 ---
 
-## 2) Strategic Positioning for Hackathon + Market
+## 1) Non-Negotiable Submission Outcomes
+By submission day, ArgusV2 must satisfy all of the following:
 
-## 2.1 Hackathon positioning
-ArgusV2 is positioned as a GitLab-native autonomous security teammate that reacts to code events and takes meaningful actions.
-
-### Judge-friendly framing
-- **Pain**: security regressions slip through tests/scanners; review bottlenecks increase with AI-generated code
-- **Solution**: proof-gated autonomous verification and repair loop in CI/MR lifecycle
-- **Outcome**: fewer regressions, faster secure merges, auditable trust
-
-## 2.2 Startup positioning
-ArgusV2 is positioned as a **Security Verification Control Plane** for engineering organizations:
-- Guardrails for security-critical logic
-- Continuous policy enforcement at development speed
-- Explainable and auditable automation for security/compliance teams
+1. **Working product flow** (trigger → verify → diagnose → repair → re-verify → MR/report output)
+2. **At least one custom public agent or public flow** clearly present and demonstrated
+3. **Public repository** with visible OSS license and complete setup instructions
+4. **Public 3-minute demo video** showing trigger-driven autonomous action
+5. **Clear text narrative** of pain, solution, and developer impact
+6. **Judging-optimized evidence** for technical implementation, usability, impact, and originality
 
 ---
 
-## 3) Anthropic Prize Positioning (Without Diluting Purpose)
+## 2) Product Definition (What the final product is)
+ArgusV2 is a **GitLab-native autonomous DevSecOps agent platform** that protects security-critical code using:
+- deterministic policy/invariant gates
+- formal verification (Lean/Dafny)
+- AI-powered diagnosis and repair
+- fail-closed decisioning
+- explainable MR and compliance artifacts
+
+### One-line positioning
+> ArgusV2 is the trust layer for AI-accelerated software delivery: it reasons, repairs, and proves before merge.
+
+---
+
+## 3) Hackathon Requirement Mapping (Explicit)
+
+## 3.1 “At least one custom public agent or public flow”
+ArgusV2 must explicitly satisfy and prove this requirement.
+
+### Current assets in repo
+- `.gitlab/duo/agent-config.yml` (custom Duo agent runtime config)
+- `config.yml` (agent metadata)
+
+### To make it indisputable for judges
+- Ensure project is public in the GitLab AI Hackathon group
+- Add README section: **“Custom Public Agent / Flow”** with file paths and run steps
+- Add demo segment showing trigger-based execution by this agent/flow
+- Include exact statement in Devpost submission text:
+  - “ArgusV2 includes a custom public GitLab Duo agent (`Argus Verified Repair`) and demonstrates event-driven autonomous actions in GitLab CI/MR workflows.”
+
+### Excellence criteria (beyond checkbox)
+- Show the agent/flow taking real actions (not chat):
+  - detect issue
+  - run verification
+  - produce diagnosis
+  - generate patch suggestion
+  - re-verify and report
+
+## 3.2 “Chat alone won’t qualify”
+ArgusV2 passes by design: all core value is event-triggered automation and CI/MR actions.
+
+## 3.3 “Tell a story (pain → solution → outcome)”
+Demo and submission must show:
+- pain: security regression slips through normal process
+- Argus action: autonomous verification + repair loop
+- outcome: safer merge, less toil, auditable evidence
+
+---
+
+## 4) Judging Rubric Strategy
+
+## 4.1 Technological Implementation
+What judges need to see:
+- robust codebase
+- real GitLab Duo platform integration
+- triggered tools/actions + reproducible outputs
+
+Argus proof points:
+- deterministic obligation policy and fail-closed contract
+- IR + semantic/equivalence checks
+- formal verification backends
+- CI artifacts and traceability lineage
+
+## 4.2 Design & Usability
+What judges need to see:
+- easy install/config
+- clear outputs for developers
+
+Argus proof points:
+- fast quickstart
+- readable MR summary format
+- optional Mission Control UI for instant comprehension
+
+## 4.3 Potential Impact
+What judges need to see:
+- solves real SDLC bottleneck
+- meaningful value for teams
+
+Argus proof points:
+- pre-merge prevention of critical security regressions
+- reduced security review/debug effort
+- direct fit into existing GitLab workflow
+
+## 4.4 Quality of Idea
+What judges need to see:
+- originality with practical use
+
+Argus proof points:
+- AI reasoning + formal proof acceptance gate
+- not a generic assistant, but a trust-gated autonomous workflow
+
+---
+
+## 5) Anthropic Prize Positioning (without dilution)
 Target: **Most Impactful on GitLab & Anthropic — Grand Prize**
 
-ArgusV2 remains proof-first. Anthropic powers the high-value reasoning surfaces.
+### Anthropic-powered components
+- Proof Diagnosis Agent (failure interpretation)
+- Secure Repair Agent (patch proposal)
+- Review Intelligence Agent (clear MR explanation)
+- Risk Prioritization Agent (module/risk ranking)
 
-### Anthropic-powered subsystems
-1. **Proof Diagnosis Agent**
-   - Converts formal verifier failures into actionable developer explanations
-2. **Secure Repair Agent**
-   - Proposes minimal, policy-aligned patches with rationale
-3. **Review Intelligence Agent**
-   - Writes concise MR summaries: what changed, why safe, residual risk
-4. **Risk Prioritization Agent**
-   - Ranks affected modules by blast radius and exploitability
-
-### Deterministic/proof-gated components (unchanged)
-- Canonical obligation policy generation
-- Assumption evidence validation
-- Semantic guard and equivalence constraints
-- Final verdict contract and CI gates
+### Deterministic core stays unchanged
+- canonical policy gates
+- evidence validation
+- final verdict logic
+- formal re-verification acceptance
 
 ### Required implementation
-- Provider routing abstraction: `LLM_PROVIDER=anthropic|gemini|hybrid`
-- Anthropic-first mode for diagnosis + repair + reviewer narrative
-- Provider provenance in all traces/reports
-- Fail-closed behavior on provider outages/errors
+- Provider routing: `LLM_PROVIDER=anthropic|gemini|hybrid`
+- Anthropic mode clearly documented and demoed
+- provider provenance in traces and reports
+- fail-closed on provider failure
 
-### Submission/demo line
-> “Anthropic drives reasoning and secure patch proposals; Argus formal verification gates decide what is truly safe.”
-
----
-
-## 4) Final Product Architecture (Judge-Impressive + Sellable)
-
-## 4.1 Backend architecture
-1. **Event & Context Ingestion Layer**
-   - GitLab triggers (push/MR/comment labels)
-   - Change set extraction + repository context
-
-2. **Policy & Invariant Engine (Trusted Core)**
-   - Deterministic canonical obligations
-   - Assumption evidence firewall
-   - Risk policy packs (fintech/auth/state-machine/compliance)
-
-3. **Program Reasoning Layer**
-   - IR lowering, chunking, VC generation
-   - Equivalence and semantic drift checks
-   - Multi-engine verification routing (Lean/Dafny)
-
-4. **Autonomous Agent Layer**
-   - Verification Agent
-   - Proof Diagnosis Agent (Anthropic)
-   - Secure Repair Agent (Anthropic)
-   - Risk Scoring Agent
-   - Compliance Reporting Agent
-
-5. **Decision & Enforcement Layer**
-   - Fail-closed verdict contract
-   - Advisory/blocking policies by branch/environment
-   - Merge checks + escalation hooks
-
-6. **Telemetry & Governance Layer**
-   - Full trace lineage per run
-   - Cost/latency/quality metrics
-   - Audit exports and evidence bundles
-
-## 4.2 Frontend/product experience
-Build a polished **Argus Mission Control UI** (hackathon-grade but startup-looking):
-- Pipeline timeline (detect → verify → diagnose → repair → re-verify)
-- Per-file invariant status cards
-- Before/after patch diff with “why this fix” narrative
-- Risk score and business impact panel
-- Compliance export view (SOC2/ISO-style evidence mapping)
-- “Executive summary” one-click view for non-technical stakeholders
+### Submission message
+> Anthropic provides reasoning and patch generation; Argus formal verification decides if the result is safe.
 
 ---
 
-## 5) Expanded Feature Set (High Ambition)
+## 6) Final Product Architecture (Submission-grade)
 
-## 5.1 Core must-have features
-- GitLab trigger-reactive custom flow
-- Verification + repair + re-verification loop
-- MR action with clear explanations and verdict details
-- Traceable artifact bundle (JSON/MD/SARIF/SAST/lineage)
+## 6.1 Backend layers
+1. Event ingestion (GitLab push/MR triggers)
+2. Policy + invariants (trusted deterministic core)
+3. Reasoning and verification (IR, VC generation, Lean/Dafny)
+4. Autonomous agents (verify/diagnose/repair/risk/compliance)
+5. Decision and enforcement (verdict + CI gate policy)
+6. Observability and governance (traceability, metrics, audit outputs)
 
-## 5.2 High-impact advanced features
-- **Dual-provider intelligence mode**: Anthropic primary, Gemini fallback for resilience/compare mode
-- **Confidence + evidence panel**: show proof confidence, assumption coverage, unresolved risks
-- **Autonomous patch branch workflow**: bot opens patch branch + MR automatically
-- **Policy pack marketplace concept**: pluggable domain policies for verticals
-- **Security regression trend analytics**: team-level trend chart over commits
-- **Compliance auto-brief generator**: plain-English reports for audits and leadership
+## 6.2 Frontend layer (Mission Control)
+A lightweight but polished web UI that presents:
+- pipeline timeline and stage status
+- per-file verdicts and invariant health
+- before/after patch and explanation
+- risk score and confidence/evidence panel
+- downloadable audit/compliance bundle
 
-## 5.3 Enterprise-grade controls
-- Role-based operation modes (Security/DevOps/Developer)
-- Branch-level enforcement policy matrix (dev/staging/prod)
-- Data handling boundaries and redaction options
-- Model governance panel (provider, version, prompt policy)
+Goal: judges and non-technical reviewers understand value in under 45 seconds.
 
 ---
 
-## 6) Build Plan (Aggressive Execution Roadmap)
+## 7) Execution Plan (Workstreams + Deliverables)
 
-## Phase A — Product Core Hardening
-- Integrate Anthropic provider routing cleanly across diagnosis/repair/reporting
-- Tighten verifier reliability, timeout envelopes, and deterministic fallback behaviors
-- Ensure all failure paths remain fail-closed and explainable
-- Formalize invariant policy packs and risk scoring categories
+## Workstream A — Core Reliability & Correctness
+### Deliverables
+- stable end-to-end flow across demo benchmarks
+- hardened timeout/retry/fail-closed handling
+- deterministic outputs for prepared demo scenarios
 
-**Exit:** Stable end-to-end autonomous flow on multiple benchmark scenarios
+### Tasks
+- verify all flow transitions under normal + failure cases
+- enforce artifact generation for every run path
+- validate advisory vs blocking policy behavior
+- cleanup and consistency across configs/prompts/model names
 
-## Phase B — Frontend Experience Layer
-- Implement Mission Control UI with live/status-backed data model
-- Build polished MR summary rendering and visual artifact cards
-- Add one-click demo mode with reproducible replay of canonical scenarios
+## Workstream B — Agent/Flow Requirement Closure
+### Deliverables
+- explicit custom public agent/flow documentation
+- verified public visibility and reproducible setup
+- demo evidence of trigger-driven autonomous actions
 
-**Exit:** Non-technical judges can understand value in <45 seconds
+### Tasks
+- README “Custom Public Agent / Flow” section
+- quickstart command path for running flow
+- submission text snippet prepared and reviewed
 
-## Phase C — Commercialization Layer
-- Add deployment modes: self-hosted single-tenant and managed control plane concept
-- Publish enterprise docs: architecture, trust model, security posture, ROI framing
-- Add pilot proposal package (30-day rollout plan)
+## Workstream C — Anthropic Integration Track
+### Deliverables
+- Anthropic provider integration for diagnosis/repair/review narrative
+- fallback/provider governance controls
+- Anthropic-mode demo run artifacts
 
-**Exit:** Credible buyer-facing story for platform/security leads
+### Tasks
+- implement provider abstraction contract
+- instrument provider metadata in trace outputs
+- validate equivalent behavior under Anthropic mode
 
-## Phase D — Submission & Story Optimization
-- Produce 3-minute high-impact demo video
-- Create benchmark-backed impact claims
-- Align submission text to each judging axis explicitly
-- Publish custom public agent/flow with clean setup docs
+## Workstream D — UX & Presentation Layer
+### Deliverables
+- polished MR message templates
+- Mission Control demo page
+- clear compliance report summaries
 
-**Exit:** Submission package that is technically excellent and narratively persuasive
+### Tasks
+- design high-signal text templates
+- add visual status dashboard
+- optimize readability for non-technical judges
 
----
+## Workstream E — Demo Engineering
+### Deliverables
+- locked 3-minute script
+- deterministic demo repository states
+- backup recorded run + static fallback assets
 
-## 7) Demo Design (3 Minutes, Judge-Optimized)
+### Tasks
+- create baseline safe scenario
+- create vulnerable scenario
+- create fixed/re-verified scenario
+- rehearse and time-box
 
-## Scene 1: Pain (20s)
-- Show vulnerable commit that passes normal test mindset but violates security invariant
+## Workstream F — Startup/Commercial Packaging
+### Deliverables
+- enterprise readiness doc
+- deployment guide + ops runbook
+- pilot proposal + ROI narrative
 
-## Scene 2: Trigger + Action (35s)
-- GitLab event triggers Argus automatically
-- Show agent flow progress in CI + Mission Control timeline
-
-## Scene 3: Proof Failure + Anthropic Diagnosis (35s)
-- Show proof failure mapped to source-level explanation
-- Explain business/security impact in one sentence
-
-## Scene 4: Autonomous Repair + Re-Verification (45s)
-- Show patch generated by Anthropic-driven repair agent
-- Re-run verification and move to FIXED/VERIFIED
-
-## Scene 5: Developer Outcome (30s)
-- MR summary + compliance artifact + risk score reduction
-
-## Scene 6: Why This Wins (15s)
-- “AI reasoning + formal proof + GitLab-native automation = trusted autonomous security delivery.”
-
----
-
-## 8) Judging Criteria Mapping (Explicit)
-
-## Technological Implementation
-- Event-driven automation + formal verification + agent orchestration
-- IR/equivalence/proof-search depth
-- High code quality + test + artifact reliability
-
-## Design & Usability
-- Mission Control UI
-- clear MR summaries
-- quickstart/deploy flow in minutes
-
-## Potential Impact
-- Prevented regressions in critical logic
-- Reduced manual review/debug toil
-- Scalable across engineering teams
-
-## Quality of Idea
-- Distinct from chatbot tools
-- Proof-backed autonomous repair loop
-- Clear path from hackathon prototype to product company
+### Tasks
+- define security/data handling posture
+- branch policy strategy (advisory→enforced)
+- pricing/pilot framing for platform/security teams
 
 ---
 
-## 9) Submission Requirements Checklist (Must Pass)
-- [ ] Public project URL in GitLab AI Hackathon group
-- [ ] Public repository with visible OSS license
-- [ ] Full source + setup + runnable instructions
-- [ ] At least one custom public agent or flow
-- [ ] Public demo video (<= 3 minutes effective judged content)
-- [ ] Clear text description of problem, solution, workflow, impact
-- [ ] Anthropic usage clearly described and demonstrated in flow
+## 8) Code Completion Checklist (Submission-grade)
+
+## Core pipeline
+- [ ] Triggered execution from GitLab push/MR works reliably
+- [ ] Full loop executes: verify → diagnose → repair → re-verify
+- [ ] Fail-closed verdict behavior validated on all known edge paths
+- [ ] Trace artifacts generated for all outcomes
+
+## Agent/flow requirement
+- [ ] `.gitlab/duo/agent-config.yml` and `config.yml` are valid and documented
+- [ ] Public custom agent/flow run is demonstrated and recorded
+- [ ] README includes explicit “Custom Public Agent / Flow” proof section
+
+## Anthropic track
+- [ ] Provider abstraction merged (`anthropic|gemini|hybrid`)
+- [ ] Anthropic mode successfully used in demo-critical path
+- [ ] Provider provenance visible in artifacts/MR summary
+
+## UX and outputs
+- [ ] MR summary is concise, actionable, and readable
+- [ ] Audit report includes technical + executive summary sections
+- [ ] Mission Control page works for demo and highlights value instantly
+
+## CI and packaging
+- [ ] `.gitlab-ci.yml` reflects final release workflow
+- [ ] Artifact names/retention stable
+- [ ] deployment quickstart works from clean environment
 
 ---
 
-## 10) Definition of Finished Product (This Cycle)
-ArgusV2 is “finished” when all are true:
+## 9) Demo Video Plan (3-minute judged format)
 
-1. **Autonomous**
-- Reacts to GitLab triggers and performs actions without manual chat intervention
+## Segment 1 (0:00–0:25) — Problem
+Show security-critical function and why standard workflows miss this class of issue.
 
-2. **Trustworthy**
-- Uses fail-closed verdicting
-- Produces verification evidence and complete run traces
+## Segment 2 (0:25–0:55) — Trigger
+Push vulnerable commit / update MR and show Argus auto-trigger.
 
-3. **Useful**
-- Developers receive actionable MR guidance and patch insights
-- Security teams receive risk and compliance visibility
+## Segment 3 (0:55–1:30) — Detection + Diagnosis
+Show proof failure and Anthropic-powered source-level diagnosis.
 
-4. **Polished**
-- Frontend is polished enough to feel like a product, not an internal tool
-- Demo is fast, clear, and repeatable
+## Segment 4 (1:30–2:10) — Repair + Re-verification
+Show generated secure patch and successful re-check.
 
-5. **Sellable**
-- Architecture/docs/pricing-pilot narrative support startup-grade positioning
+## Segment 5 (2:10–2:40) — Developer & Compliance UX
+Show MR summary + Mission Control + exported evidence bundle.
 
----
-
-## 11) Additional Enhancements to Maximize Impressiveness
-- Add “Argus Score” per MR: combines proof health, assumption quality, risk magnitude
-- Add natural-language “Board Update” mode for engineering leadership reporting
-- Add domain demo pack (FinTech + Auth + Workflow state transitions)
-- Add one standout “wow” feature: simulated exploit path prevented by Argus fix
-- Add green-agent angle: compute-aware execution strategy to reduce CI waste
+## Segment 6 (2:40–3:00) — Close
+State why this is impactful, usable, technically novel, and enterprise-ready.
 
 ---
 
-## 12) Final Strategic Guidance
-Do not pitch ArgusV2 as just another coding assistant. Position it as:
+## 10) Submission Package Checklist (Final Gate)
 
-> **The trust layer for AI-accelerated software delivery.**
+- [ ] Public GitLab repository in GitLab AI Hackathon group
+- [ ] Visible OSS license on repo page
+- [ ] Full source code + assets + run instructions
+- [ ] Text description on Devpost submission
+- [ ] Public YouTube/Vimeo demo video
+- [ ] At least one custom public agent or public flow explicitly documented
+- [ ] Judging alignment explicitly addressed in submission text
+- [ ] Anthropic impact narrative included (if entering Anthropic category)
 
-The strongest winning formula is:
-- Ambitious backend depth
-- Tangible frontend clarity
-- Triggered autonomous actions in GitLab
-- Anthropic-powered reasoning with proof-gated acceptance
-- Clear path to enterprise deployment and measurable ROI
+---
+
+## 11) Deliverables to Generate Before Final Submit
+
+## Repo/docs deliverables
+- [ ] `README.md` (submission-ready rewrite)
+- [ ] `docs/quickstart.md`
+- [ ] `docs/deployment-guide.md`
+- [ ] `docs/ops-runbook.md`
+- [ ] `docs/enterprise-readiness.md`
+- [ ] `docs/pilot-proposal.md`
+- [ ] `docs/demo-script.md`
+- [ ] `docs/custom-agent-proof.md` (or equivalent README section)
+
+## Demo deliverables
+- [ ] 3-minute final video
+- [ ] fallback recording/screenshots
+- [ ] architecture slide and impact slide
+
+## Product deliverables
+- [ ] Mission Control UI (demo-polished)
+- [ ] final MR template output
+- [ ] validated benchmark scenarios and evidence exports
+
+---
+
+## 12) Risk Register + Mitigations
+
+## Risk 1: Demo flakiness (network/model/runtime)
+Mitigation:
+- deterministic benchmark states
+- backup pre-recorded run
+- local fallback assets for every critical scene
+
+## Risk 2: Requirement ambiguity (custom agent/flow)
+Mitigation:
+- explicit public proof section with file paths and run commands
+- direct mention in submission text and video narration
+
+## Risk 3: Too technical / low usability score
+Mitigation:
+- Mission Control visual layer
+- plain-English MR summaries
+- executive summary in reports
+
+## Risk 4: Scope overload
+Mitigation:
+- prioritize narrative-critical features first
+- sequence high-ambition features with demo impact lens
+
+## Risk 5: Anthropic integration instability
+Mitigation:
+- provider abstraction + fallback mode
+- fail-closed behavior on provider errors
+
+---
+
+## 13) Definition of Done (True Submission Grade)
+ArgusV2 is submission-grade only when all are true:
+
+1. **Autonomous and triggered** (not chat-only)
+2. **Proof-gated and fail-closed** (trusted outcomes)
+3. **Readable and usable** (developer + judge comprehension)
+4. **Public requirement-compliant** (agent/flow + repo + video + docs)
+5. **Commercially credible** (deployment + governance + pilot narrative)
+
+---
+
+## 14) Final Strategic Guidance
+To maximize both judging and market potential, present ArgusV2 as:
+
+> A GitLab-native autonomous security teammate that uses Anthropic reasoning and formal proof gates to prevent security regressions before merge.
+
+Build and narrate around outcomes:
+- safer merges
+- faster reviews
+- auditable trust
+- practical path to enterprise adoption
