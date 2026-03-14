@@ -235,7 +235,140 @@ Goal: judges and non-technical reviewers understand value in under 45 seconds.
 
 ---
 
-## 8) Code Completion Checklist (Submission-grade)
+## 8) Phase-by-Phase Manager Review Framework
+Use this section for explicit sign-off after each phase.
+
+## Phase 1 — Core Reliability & Correctness
+### Goal
+Stabilize the end-to-end autonomous pipeline so outcomes are deterministic, trustworthy, and repeatable.
+
+### Scope
+- Triggered flow execution
+- Verification, diagnosis, repair, re-verification continuity
+- Fail-closed behavior and artifact completeness
+
+### Deliverables
+- Reliability report
+- Stable pipeline behavior across prepared benchmark scenarios
+- Updated configs/prompts/model consistency
+
+### Acceptance criteria
+- End-to-end flow passes on prepared scenarios without manual intervention
+- Required artifacts are produced for all major outcome paths
+- Fail-closed behavior validated under error paths
+
+### Evidence for review
+- CI run links
+- `docs/reliability-report.md`
+- Artifact samples (`argus_report.json`, traces, MR summary output)
+
+---
+
+## Phase 2 — Custom Public Agent/Flow Closure
+### Goal
+Unambiguously satisfy and exceed the hackathon “custom public agent or flow” requirement.
+
+### Scope
+- Public agent/flow visibility
+- Documentation and reproducible execution path
+- Trigger-driven autonomous actions proof
+
+### Deliverables
+- README section proving custom public agent/flow
+- Reproducible run instructions
+- Submission-ready requirement statement
+
+### Acceptance criteria
+- Judges can verify custom public agent/flow existence in under 1 minute
+- Demo shows trigger-based actions (not chat-only)
+- Requirement is explicitly referenced in submission text and video narration
+
+### Evidence for review
+- Repo file paths (`.gitlab/duo/agent-config.yml`, `config.yml`)
+- README section screenshot
+- Demo clip timestamp references
+
+---
+
+## Phase 3 — Anthropic Impact Track
+### Goal
+Integrate Anthropic-powered reasoning in a way that increases impact without compromising proof-gated trust.
+
+### Scope
+- Provider routing abstraction
+- Anthropic diagnosis + repair + review narrative path
+- Provenance in traces/reports and fail-closed fallback behavior
+
+### Deliverables
+- Provider-config docs and implementation
+- Anthropic-mode benchmark/demo evidence
+- Submission copy for Anthropic prize positioning
+
+### Acceptance criteria
+- Anthropic mode successfully drives at least one end-to-end repair flow
+- Provider failures do not bypass safety gates
+- Traces/reports clearly show provider usage
+
+### Evidence for review
+- Anthropic-mode CI run
+- Updated docs/config examples
+- Trace snippets showing provider metadata
+
+---
+
+## Phase 4 — UX, Frontend, and Demo Polish
+### Goal
+Make Argus instantly understandable and impressive to both technical and non-technical judges.
+
+### Scope
+- Mission Control UI or equivalent polished visual layer
+- High-signal MR summary templates
+- 3-minute narrative-tight demo script and assets
+
+### Deliverables
+- UI demo surface
+- Final MR/report templates
+- Finalized demo script + backup assets
+
+### Acceptance criteria
+- A non-technical reviewer can explain Argus value in <45 seconds
+- Demo consistently runs within 3-minute judged window
+- UI + MR outputs clearly communicate what broke, what was fixed, and why safe
+
+### Evidence for review
+- UI screenshots/GIF/video capture
+- Final demo script with timestamps
+- Example MR before/after outputs
+
+---
+
+## Phase 5 — Submission Packaging & Launch Readiness
+### Goal
+Complete all hackathon submission requirements and pass startup-grade launch gates.
+
+### Scope
+- Submission completeness (repo/license/video/description)
+- Launch readiness gates A–G
+- Commercial readiness docs and pilot narrative
+
+### Deliverables
+- Final submission package
+- Completed gate evidence docs
+- Go/No-Go checklist outcome
+
+### Acceptance criteria
+- All submission checklist items complete
+- All Launch Readiness gates green with linked evidence
+- Final dry run succeeds end-to-end on clean setup
+
+### Evidence for review
+- Devpost draft submission text
+- Checklist completion matrix
+- Gate evidence docs (`docs/*.md`) and final run logs
+
+---
+
+## 9) Code Completion Checklist (Submission-grade)
 
 ## Core pipeline
 - [ ] Triggered execution from GitLab push/MR works reliably
