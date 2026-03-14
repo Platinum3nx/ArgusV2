@@ -108,6 +108,7 @@ Use this architecture in docs/pitch/demo:
 - Ensure traceability artifacts always emitted
 - Harden timeout/error handling for verifier and LLM failure paths
 - Confirm CI job semantics (advisory vs blocking) and document chosen mode
+- Add LLM provider strategy (`anthropic` + fallback provider) with deterministic config toggle
 
 ### Deliverables
 - Reliability matrix document (`docs/reliability-matrix.md`)
@@ -178,6 +179,7 @@ Use this architecture in docs/pitch/demo:
   - Argus repair commit/MR output
 - Capture backup artifacts/screenshots in case live CI lags
 - Create architecture slide + “why now / why us” slide
+- Add one explicit Anthropic-mode demo run (diagnosis + repair with proof-gated acceptance)
 
 ### Deliverables
 - `docs/demo-script.md`
@@ -365,7 +367,38 @@ Deliverables to include:
 
 ---
 
-## 10) Submission Compliance Checklist (Must Pass)
+## 10) Anthropic Prize Positioning (Without Diluting Core Purpose)
+Target category: **Most Impactful on GitLab & Anthropic — Grand Prize**
+
+### 10.1 Positioning principle
+ArgusV2 remains a proof-backed DevSecOps product first. Anthropic is integrated as the high-value reasoning engine for specific stages, while formal verification remains the acceptance gate.
+
+### 10.2 Where Anthropic is used (narrow and high-impact)
+- **Proof Diagnosis Agent**: convert verifier/proof failures into developer-meaningful root-cause explanations
+- **Secure Repair Agent**: propose minimal secure patch candidates from failure context
+- **Reviewer Narrative**: generate concise MR explanation of what changed and why it is safe
+
+### 10.3 What must stay deterministic
+- Canonical obligation policy and invariant gate logic
+- Assumption evidence validation
+- Final safety decision (VERIFIED/FIXED/VULNERABLE/UNVERIFIED/ERROR)
+- Re-verification requirements before any acceptance claim
+
+### 10.4 Implementation requirements for this week
+- Add provider routing config (e.g., `LLM_PROVIDER=anthropic|gemini`) and document it
+- Emit provider metadata in trace artifacts and reports
+- Add one benchmark/demo flow that explicitly runs in Anthropic mode
+- Ensure fallback behavior is fail-closed when provider call fails
+
+### 10.5 Submission + demo messaging
+Use this message consistently:
+> "ArgusV2 uses Anthropic for nuanced security reasoning and repair generation, and uses formal verification to prove whether the result is safe before it can pass."
+
+This keeps purpose intact and directly satisfies the Anthropic impact narrative.
+
+---
+
+## 11) Submission Compliance Checklist (Must Pass)
 Based on Devpost requirements, ensure all are complete before submission:
 
 - [ ] Public project URL inside GitLab AI Hackathon group
@@ -374,8 +407,10 @@ Based on Devpost requirements, ensure all are complete before submission:
 - [ ] Text project description on submission page
 - [ ] Public demo video (YouTube/Vimeo), <= 3 minutes judged window
 - [ ] At least one custom public agent or public flow created
+- [ ] Anthropic-powered reasoning path demonstrated (diagnosis and/or repair) within GitLab-triggered flow
+- [ ] Demo and submission text explicitly explain Anthropic role + formal proof acceptance gate
 
 ---
 
-## 11) Final Recommendation
+## 12) Final Recommendation
 For this week, **optimize for reliability + explainability + deployment simplicity** over adding novel algorithms. You already have enough technical depth in the codebase; the winning move now is presenting it as a dependable, understandable, CI-native product with a credible path to enterprise adoption — and packaging it exactly against the Devpost judging rubric.
