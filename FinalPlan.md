@@ -366,7 +366,97 @@ ArgusV2 is submission-grade only when all are true:
 
 ---
 
-## 14) Final Strategic Guidance
+## 14) Launch Readiness Addendum (Startup-Grade Certification Gates)
+This section converts ambition into objective pass/fail criteria. ArgusV2 is **not** considered startup-grade until every gate below is green.
+
+## 14.1 Gate A — Production Reliability
+### Required checks
+- [ ] End-to-end pipeline success rate >= 95% on controlled benchmark corpus across 20+ repeated runs
+- [ ] p95 full-run latency documented and within target budget (define target per runner profile)
+- [ ] Deterministic verdict stability across repeated identical runs (no unexplained drift)
+- [ ] Retry and timeout behavior verified for verifier and LLM-provider failures
+
+### Evidence artifacts
+- `docs/reliability-report.md`
+- benchmark replay logs + summarized metrics table
+
+## 14.2 Gate B — Security, Privacy, and Governance
+### Required checks
+- [ ] Secret handling model documented (token scopes, storage location, rotation policy)
+- [ ] Trace/prompt data policy documented (retention window, redaction strategy, export controls)
+- [ ] Role model documented (developer/devops/security/admin permissions)
+- [ ] Fail-closed behavior validated under provider/runtime failures
+
+### Evidence artifacts
+- `docs/security-posture.md`
+- `docs/data-handling-policy.md`
+
+## 14.3 Gate C — Deployability & Environment Compatibility
+### Required checks
+- [ ] Fresh install validated from clean environment using docs only
+- [ ] Runner compatibility matrix tested (at least 2 realistic runner environments)
+- [ ] Upgrade/versioning strategy documented (config and image version handling)
+- [ ] Environment variable contract frozen and validated
+
+### Evidence artifacts
+- `docs/install-validation.md`
+- `docs/compatibility-matrix.md`
+
+## 14.4 Gate D — Operability & Supportability
+### Required checks
+- [ ] Monitoring points defined (pipeline outcomes, provider errors, verifier errors, latency)
+- [ ] Incident runbooks exist for top failure modes
+- [ ] Troubleshooting guide maps symptoms to fixes
+- [ ] Minimal support SLA assumptions documented for pilot customers
+
+### Evidence artifacts
+- `docs/ops-monitoring.md`
+- `docs/incident-runbook.md`
+- `docs/troubleshooting.md`
+
+## 14.5 Gate E — Product UX Quality (Frontend + Developer Experience)
+### Required checks
+- [ ] Mission Control UI communicates status/value clearly to non-technical viewers
+- [ ] MR summaries are actionable and consistently understandable
+- [ ] Core UX path tested with at least 3 users (or equivalent review) and feedback incorporated
+- [ ] UI + report outputs avoid ambiguous verdict language
+
+### Evidence artifacts
+- `docs/ux-validation.md`
+- screenshot/GIF pack used in submission and sales deck
+
+## 14.6 Gate F — Commercial Readiness
+### Required checks
+- [ ] ICP and buyer persona defined (platform/security engineering leaders)
+- [ ] 30-day pilot plan with success metrics defined
+- [ ] ROI narrative tied to measurable outcomes (time saved, regressions reduced)
+- [ ] Competitive positioning one-pager completed
+
+### Evidence artifacts
+- `docs/commercial-readiness.md`
+- `docs/pilot-success-metrics.md`
+- `docs/competitive-positioning.md`
+
+## 14.7 Gate G — Demo Integrity (No Demo-Only Shortcuts)
+### Required checks
+- [ ] Demo path uses the same production code path and configuration profile (no hardcoded bypasses)
+- [ ] Any seeded demo fixtures are explicitly labeled and reproducible
+- [ ] No hidden/manual intervention required during demo flow
+- [ ] Backup demo assets represent real runs from the same build/version
+
+### Evidence artifacts
+- `docs/demo-integrity-checklist.md`
+- reproducibility commands and commit hashes
+
+## 14.8 Final Go/No-Go Rule
+ArgusV2 is approved as “startup-grade + submission-grade” only when:
+- [ ] All submission checklist items are complete
+- [ ] All Launch Readiness gates A–G are green with evidence docs linked
+- [ ] Final dry run (install → execute → observe → explain) succeeds end-to-end without manual patching
+
+---
+
+## 15) Final Strategic Guidance
 To maximize both judging and market potential, present ArgusV2 as:
 
 > A GitLab-native autonomous security teammate that uses Anthropic reasoning and formal proof gates to prevent security regressions before merge.
