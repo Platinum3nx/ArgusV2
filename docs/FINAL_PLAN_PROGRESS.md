@@ -68,9 +68,12 @@ Stabilize end-to-end autonomous behavior so outcomes are deterministic, fail-clo
 **Status:** NOT STARTED (in this pass)
 
 ### Planned work
-- [ ] Add explicit README proof section for custom public agent/flow.
-- [ ] Add reproducible run steps and submission wording.
-- [ ] Capture demo evidence references.
+- [ ] **Step 2.1**: Enrich `config.yml` with tools/triggers/actions declarations; enrich `.gitlab/duo/agent-config.yml` with env contract and resource requirements.
+- [ ] **Step 2.2**: Create `.gitlab/duo/flows/argus_verify.yml` — formal Duo flow definition mapping to `ArgusPipeline` stages.
+- [ ] **Step 2.3**: Write README "Custom Public Agent & Flow" section with agent identity, flow diagram, file path table, trigger proof, and quickstart.
+- [ ] **Step 2.4**: Write `docs/quickstart.md` — reproducible fork-to-observed-action instructions.
+- [ ] **Step 2.5**: Draft `docs/submission-text.md` — Devpost-ready requirement statement with judge FAQ.
+- [ ] **Step 2.6**: Validate public visibility (repo in hackathon group, public, all configs committed).
 
 ---
 

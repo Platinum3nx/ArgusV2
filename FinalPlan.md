@@ -266,27 +266,168 @@ Stabilize the end-to-end autonomous pipeline so outcomes are deterministic, trus
 
 ## Phase 2 — Custom Public Agent/Flow Closure
 ### Goal
-Unambiguously satisfy and exceed the hackathon “custom public agent or flow” requirement.
+Unambiguously satisfy and exceed the hackathon “custom public agent or flow” requirement. Judges must be able to find, understand, and verify the custom agent/flow within 60 seconds of opening the repository.
 
-### Scope
-- Public agent/flow visibility
-- Documentation and reproducible execution path
-- Trigger-driven autonomous actions proof
+### Why this phase matters
+This is a **hard gate for hackathon eligibility**. The rules state “at least one custom public agent or public flow” and “chat alone won't qualify.” Phase 1 built the working autonomous pipeline; Phase 2 makes that pipeline legible as a custom agent + flow to judges. Failing this phase = disqualification regardless of technical quality.
 
-### Deliverables
-- README section proving custom public agent/flow
-- Reproducible run instructions
-- Submission-ready requirement statement
+### Current state (entering Phase 2)
+| Asset | Status | Gap |
+|---|---|---|
+| `.gitlab/duo/agent-config.yml` | Exists | Only defines Docker image + cache. No tools, triggers, or capabilities. |
+| `config.yml` | Exists | Agent metadata only (name/desc/version). No tool or action definitions. |
+| `.gitlab-ci.yml` argus-verify job | Working | Triggers on MR, runs pipeline, produces artifacts. This IS the autonomous flow — needs formal packaging. |
+| `src/adapters/cli.py` | Working | CLI entry point with CI mode, artifact generation, GitLab MR publishing. |
+| `src/adapters/gitlab_adapter.py` | Working | Posts MR comments, applies labels, derives verdicts. |
+| `.gitlab/duo/flows/` directory | Missing | No formal Duo flow YAML definition exists. |
+| README “Custom Public Agent/Flow” section | Missing | Neither README.md nor README2.md has this section. |
+| `docs/quickstart.md` | Missing | No reproducible run instructions for judges. |
+| `docs/custom-agent-proof.md` | Missing | No standalone proof document. |
+| Submission text snippet | Not drafted | Devpost-ready statement not prepared. |
+
+### Strategy
+Claim **both** the custom agent AND public flow to be indisputable (belt and suspenders):
+- **Custom Agent**: `config.yml` + enriched `.gitlab/duo/agent-config.yml` define “Argus Verified Repair” as a Duo-registered autonomous agent with declared tools and capabilities.
+- **Public Flow**: `.gitlab/duo/flows/argus_verify.yml` formally defines the event-driven flow (trigger → verify → diagnose → repair → re-verify → report → MR action) that the CI pipeline executes.
+
+### Execution steps (ordered)
+
+#### Step 2.1 — Enrich agent configuration files
+**Files**: `.gitlab/duo/agent-config.yml`, `config.yml`
+
+`config.yml` must declare:
+- `display_name`, `description`, `version` (already present)
+- `tools` block listing the agent's capabilities:
+  - `invariant_discovery` — extract security obligations from Python source
+  - `formal_translator` — translate Python to Lean 4 / Dafny proof obligations
+  - `formal_verifier` — run Lean 4 / Dafny verification and return pass/fail per obligation
+  - `proof_search` — LLM-guided proof search for failing obligations
+  - `secure_repair` — generate verified security patches for vulnerable code
+  - `equivalence_checker` — validate translation faithfulness via property-based testing
+  - `mr_publisher` — post structured verdict comments and apply labels to GitLab MRs
+- `triggers` block declaring activation events:
+  - `merge_request_created`
+  - `merge_request_updated` (new commits pushed)
+- `actions` block declaring autonomous actions the agent takes:
+  - Block merge on VULNERABLE/ERROR verdicts (fail-closed)
+  - Post MR comment with structured diagnosis
+  - Apply `argus:verified` / `argus:vulnerable` / `argus:fixed` labels
+  - Generate audit artifacts (JSON, Markdown, SARIF, GitLab SAST)
+
+`agent-config.yml` must declare:
+- Runtime image reference (already present)
+- Cache paths (already present)
+- Environment variable contract (`GEMINI_API_KEY`, `GITLAB_TOKEN`, `CI_*` vars)
+- Resource requirements (verification engine needs)
+
+**Acceptance**: Both files parse as valid YAML, tool/trigger/action declarations match actual codebase capabilities, no phantom features.
+
+#### Step 2.2 — Create formal Duo flow definition
+**File**: `.gitlab/duo/flows/argus_verify.yml`
+
+Define the autonomous flow as a structured YAML document:
+```
+name: argus-verified-repair
+description: Event-driven security verification and autonomous repair flow
+trigger: merge_request (push events)
+stages:
+  1. discover    — extract obligations and invariants from changed Python files
+  2. translate   — convert Python to formal proof language (Lean 4 / Dafny)
+  3. verify      — run formal verification against obligations
+  4. proof_search — (on failure) LLM-guided proof search for missing tactics
+  5. repair      — (on failure) generate and re-verify secure patch
+  6. report      — produce audit artifacts and structured MR comment
+  7. enforce     — apply labels, block/allow merge based on verdict
+```
+
+This flow maps 1:1 to the `ArgusPipeline._run_file()` execution in `src/core/pipeline.py`. The YAML is the declarative description; the Python is the runtime implementation.
+
+**Acceptance**: Flow YAML exists, stages match actual pipeline execution, no stages reference unimplemented functionality.
+
+#### Step 2.3 — Write README “Custom Public Agent / Flow” section
+**File**: `README.md` (rewrite or add section)
+
+Must include:
+- **Section header**: `## Custom Public Agent & Flow` (scannable in repo view)
+- **Agent identity**: Name (“Argus Verified Repair”), config file paths, what it does in one sentence
+- **Flow diagram**: Text-based flow showing trigger → stages → outputs
+- **File path table**: Every config/flow file with its purpose, so judges can click through
+- **Trigger proof**: Explain that `argus-verify` CI job activates on `$CI_MERGE_REQUEST_IID` — not manual, not chat
+- **Autonomous actions taken**: List of actions the agent takes without human intervention (post comment, apply labels, block merge, generate artifacts)
+- **How to run it**: 3-step quickstart (fork → push vulnerable code → observe)
+
+**Acceptance**: A judge reading only the README can identify the custom agent name, locate its config, understand the flow, and know how to trigger it — all within 60 seconds.
+
+#### Step 2.4 — Write quickstart documentation
+**File**: `docs/quickstart.md`
+
+Reproducible steps from zero to observed autonomous action:
+1. **Prerequisites**: GitLab account, Gemini API key, Docker (for local) or GitLab Runner (for CI)
+2. **Fork & configure**: Fork the repo into GitLab AI Hackathon group, set `GEMINI_API_KEY` CI variable
+3. **Trigger the flow**: Create MR with a Python file containing a security-sensitive function (example provided)
+4. **Observe autonomous action**: Pipeline triggers → `argus-verify` job runs → MR comment posted → labels applied → artifacts downloadable
+5. **Inspect outputs**: Where to find `argus_report.json`, `Argus_Audit_Report.md`, SARIF report, trace directory
+
+Include a “30-second local test” path:
+```bash
+python -m src.adapters.cli --file demo_target/vulnerable_example.py --allow-local-verify
+```
+
+**Acceptance**: A developer following only this doc can trigger and observe Argus on a fresh fork within 10 minutes.
+
+#### Step 2.5 — Draft submission text snippet
+**File**: `docs/submission-text.md`
+
+Prepare the exact language for Devpost submission that satisfies the requirement:
+
+> **Custom Public Agent / Flow**: ArgusV2 includes a custom public GitLab Duo agent (“Argus Verified Repair”, defined in `config.yml` and `.gitlab/duo/agent-config.yml`) and a public flow (`.gitlab/duo/flows/argus_verify.yml`) that demonstrates event-driven autonomous actions in GitLab CI/MR workflows. On every merge request, Argus autonomously: discovers security obligations, translates code to formal proof language, runs Lean 4/Dafny verification, attempts AI-powered repair when proofs fail, and posts structured verdict comments with audit artifacts — all without human intervention.
+
+Also prepare responses to potential judge questions:
+- “Is this just a CI pipeline?” → No, it's an autonomous agent with declared tools and capabilities that takes actions (MR comments, labels, merge blocking) beyond running tests.
+- “Where's the agent?” → `config.yml` (agent identity), `.gitlab/duo/agent-config.yml` (runtime config), `.gitlab/duo/flows/argus_verify.yml` (flow definition).
+- “Does it work without chat?” → Yes, entirely event-triggered. Chat is not involved at any point.
+
+**Acceptance**: Submission text directly addresses the hackathon requirement with file paths judges can verify.
+
+#### Step 2.6 — Validate public visibility
+**Manual check (not code)**:
+- [ ] Repository is in the GitLab AI Hackathon group and set to public
+- [ ] All agent/flow config files are committed and visible in the default branch
+- [ ] LICENSE file is present and visible on repo page (CC0 — already exists)
+- [ ] No secrets or tokens in committed files
+
+### Deliverables summary
+| # | Deliverable | File(s) | New/Modified |
+|---|---|---|---|
+| 2.1 | Enriched agent configs | `config.yml`, `.gitlab/duo/agent-config.yml` | Modified |
+| 2.2 | Formal flow definition | `.gitlab/duo/flows/argus_verify.yml` | New |
+| 2.3 | README agent/flow proof section | `README.md` | Modified |
+| 2.4 | Quickstart documentation | `docs/quickstart.md` | New |
+| 2.5 | Submission text snippet | `docs/submission-text.md` | New |
+| 2.6 | Public visibility validation | (manual check) | N/A |
 
 ### Acceptance criteria
-- Judges can verify custom public agent/flow existence in under 1 minute
-- Demo shows trigger-based actions (not chat-only)
-- Requirement is explicitly referenced in submission text and video narration
+- [ ] Judges can verify custom public agent/flow existence in under 1 minute from the README alone
+- [ ] Agent config files declare tools, triggers, and actions that match implemented capabilities
+- [ ] Flow YAML stages map 1:1 to actual `ArgusPipeline` execution
+- [ ] Demo shows trigger-based autonomous actions (not chat-only)
+- [ ] Quickstart is reproducible from a clean fork within 10 minutes
+- [ ] Requirement is explicitly referenced in submission text with verifiable file paths
+- [ ] No phantom features: every declared capability has a working code path
 
 ### Evidence for review
-- Repo file paths (`.gitlab/duo/agent-config.yml`, `config.yml`)
-- README section screenshot
-- Demo clip timestamp references
+- Repo file paths: `.gitlab/duo/agent-config.yml`, `config.yml`, `.gitlab/duo/flows/argus_verify.yml`
+- README section (visible on repo landing page)
+- `docs/quickstart.md` (validated by walkthrough)
+- `docs/submission-text.md` (ready for Devpost paste)
+- Demo clip timestamp references showing trigger → autonomous action → output
+
+### Risks specific to Phase 2
+| Risk | Impact | Mitigation |
+|---|---|---|
+| GitLab Duo flow YAML schema mismatch | Judges validate against official spec, find non-conformant structure | Research current Duo flow schema before authoring; keep structure conservative |
+| “Just a CI pipeline” objection | Judge scores low on originality/agent criteria | Emphasize tool declarations, MR actions (comments/labels/blocking), and agent identity beyond CI |
+| README too long / buried section | Judge can't find proof in 60 seconds | Put “Custom Public Agent & Flow” section near top, use clear header, include file path table |
 
 ---
 
