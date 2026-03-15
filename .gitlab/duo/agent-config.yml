@@ -1,5 +1,47 @@
+# Runtime configuration for the Argus Verified Repair Duo agent.
+# This file is intentionally conservative and maps only to implemented behavior.
+
 image: registry.gitlab.com/platinum3nx/argusv2/argus-v2:latest
+
 cache:
   paths:
     - lean_project/.lake/
     - .argus-cache/
+    - .argus-trace/
+
+runtime:
+  entrypoint:
+    - python
+    - -m
+    - src.adapters.cli
+  default_args:
+    - --repo-path
+    - .
+    - --mode
+    - ci
+
+environment_contract:
+  required:
+    - CI_PROJECT_ID
+    - CI_MERGE_REQUEST_IID
+    - CI_SERVER_URL
+  optional:
+    - GITLAB_TOKEN
+    - GEMINI_API_KEY
+    - ARGUS_ALLOW_LOCAL_VERIFY
+
+resources:
+  notes:
+    - "Lean/Dafny verification is CPU-intensive; prefer medium+ runners for stable CI times."
+    - "Cold starts may incur Lean dependency bootstrap latency."
+
+capabilities:
+  triggers:
+    - merge_request_created
+    - merge_request_updated
+  autonomous_actions:
+    - run_formal_verification_pipeline
+    - generate_trace_and_security_artifacts
+    - publish_mr_comment
+    - apply_verdict_labels
+    - fail_closed_merge_enforcement

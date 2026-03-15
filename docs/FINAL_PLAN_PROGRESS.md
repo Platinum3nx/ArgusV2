@@ -65,15 +65,23 @@ Stabilize end-to-end autonomous behavior so outcomes are deterministic, fail-clo
 ---
 
 ## Phase 2 — Custom Public Agent/Flow Closure
-**Status:** NOT STARTED (in this pass)
+**Status:** IN PROGRESS (implementation complete; visibility validation pending)
 
-### Planned work
-- [ ] **Step 2.1**: Enrich `config.yml` with tools/triggers/actions declarations; enrich `.gitlab/duo/agent-config.yml` with env contract and resource requirements.
-- [ ] **Step 2.2**: Create `.gitlab/duo/flows/argus_verify.yml` — formal Duo flow definition mapping to `ArgusPipeline` stages.
-- [ ] **Step 2.3**: Write README "Custom Public Agent & Flow" section with agent identity, flow diagram, file path table, trigger proof, and quickstart.
-- [ ] **Step 2.4**: Write `docs/quickstart.md` — reproducible fork-to-observed-action instructions.
-- [ ] **Step 2.5**: Draft `docs/submission-text.md` — Devpost-ready requirement statement with judge FAQ.
-- [ ] **Step 2.6**: Validate public visibility (repo in hackathon group, public, all configs committed).
+### Execution status
+- [x] **Step 2.1**: Enriched `config.yml` with tools/triggers/actions declarations; enriched `.gitlab/duo/agent-config.yml` with env contract and runtime/resource notes.
+- [x] **Step 2.2**: Created `.gitlab/duo/flows/argus_verify.yml` — formal flow definition mapped to `ArgusPipeline` + CI execution.
+- [x] **Step 2.3**: Added README "Custom Public Agent & Flow" proof section with 60-second checklist, file-path map, trigger proof.
+- [x] **Step 2.4**: Added `docs/quickstart.md` — reproducible fork-to-observed-action instructions.
+- [x] **Step 2.5**: Added `docs/submission-text.md` — Devpost-ready requirement statement and judge FAQ.
+- [ ] **Step 2.6**: Validate public visibility manually (repo in hackathon group, public visibility, default branch contains flow files, no exposed secrets).
+
+### Phase 2 evidence
+- `config.yml`
+- `.gitlab/duo/agent-config.yml`
+- `.gitlab/duo/flows/argus_verify.yml`
+- `README.md` (top-level Custom Public Agent & Flow section)
+- `docs/quickstart.md`
+- `docs/submission-text.md`
 
 ---
 

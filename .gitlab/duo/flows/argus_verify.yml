@@ -1,0 +1,64 @@
+# Argus Duo Flow (declarative)
+# Purpose: make the event-driven autonomous verification flow explicit and reviewable.
+# Note: this flow document mirrors implemented runtime behavior in src/core/pipeline.py and .gitlab-ci.yml.
+
+schema:
+  name: "argus-flow-declarative-v1"
+  source_of_truth:
+    - ".gitlab-ci.yml::argus-verify"
+    - "src/core/pipeline.py::ArgusPipeline"
+
+name: "argus-verified-repair"
+display_name: "Argus Verified Repair Flow"
+description: "Event-driven formal verification, proof search, repair, and MR reporting for Python merge requests."
+visibility: "public"
+
+trigger:
+  provider: "gitlab"
+  events:
+    - merge_request_created
+    - merge_request_updated
+  ci_rule_proof: ".gitlab-ci.yml uses $CI_MERGE_REQUEST_IID for argus-verify job activation"
+
+stages:
+  - id: discover
+    implementation: "src.core.invariant_discovery + src.core.obligation_policy"
+    output:
+      - ".argus-trace/<run>/files/<file>/01_discovery.json"
+
+  - id: translate
+    implementation: "src.core.translator.{ASTTranslator,DafnyTranslator,LLMTranslator}"
+    output:
+      - ".argus-trace/<run>/files/<file>/02_translation.lean|02_translation.dfy"
+
+  - id: verify
+    implementation: "src.core.verifier.{LeanVerifier,DafnyVerifier}"
+    output:
+      - ".argus-trace/<run>/files/<file>/03_verify_stdout.txt"
+
+  - id: proof_search
+    condition: "verdict == VULNERABLE and engine == lean"
+    implementation: "src.core.proof_search.ProofSearchEngine"
+
+  - id: repair
+    condition: "verdict == VULNERABLE and allow_repair == true"
+    implementation: "src.core.repair.RepairEngine + rerun verification"
+
+  - id: report
+    implementation: "src.core.reporter + src.adapters.cli"
+    outputs:
+      - "argus_report.json"
+      - "Argus_Audit_Report.md"
+      - "argus-sarif-report.json"
+      - "gl-sast-report.json"
+      - "argus-ci-gates.json"
+
+  - id: enforce
+    implementation: "src.adapters.cli exit code contract + GitLab CI job status"
+    behavior:
+      - "non-zero exit on vulnerable/unverified/error or failed integrity gates"
+      - "MR comment + labels via src.adapters.gitlab_adapter when configured"
+
+non_goals:
+  - "No chat-triggered operation required"
+  - "No bypass mode for unsupported constructs (fail-closed)"

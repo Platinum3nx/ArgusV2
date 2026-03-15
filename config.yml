@@ -1,3 +1,60 @@
 display_name: "Argus Verified Repair"
-description: "A neuro-symbolic DevSecOps agent that uses Gemini 3 and Lean 4 to mathematically prove security fixes before merging."
-version: "2.0.0"
+description: "A neuro-symbolic DevSecOps agent that uses Gemini and formal verification (Lean 4 / Dafny) to prove security properties before merge."
+version: "2.1.0"
+
+agent:
+  id: "argus-verified-repair"
+  category: "devsecops"
+  visibility: "public"
+
+tools:
+  - id: "invariant_discovery"
+    module: "src.core.invariant_discovery.InvariantDiscovery"
+    purpose: "Extract canonical obligations and assumption candidates from Python code."
+  - id: "obligation_policy"
+    module: "src.core.obligation_policy.ObligationPolicy"
+    purpose: "Generate deterministic, canonical obligations and preconditions."
+  - id: "formal_translator"
+    module: "src.core.translator"
+    purpose: "Translate Python obligations into Lean 4 / Dafny artifacts."
+  - id: "formal_verifier"
+    module: "src.core.verifier"
+    purpose: "Verify obligations with Lean 4 / Dafny and return per-obligation outcomes."
+  - id: "proof_search"
+    module: "src.core.proof_search.ProofSearchEngine"
+    purpose: "Attempt proof repair using constrained LLM-guided candidate generation."
+  - id: "secure_repair"
+    module: "src.core.repair.RepairEngine"
+    purpose: "Generate candidate code repairs and re-verify fail-closed."
+  - id: "equivalence_checker"
+    module: "src.core.equivalence.run_equivalence_check"
+    purpose: "Validate semantic equivalence between source Python and lowered IR path."
+  - id: "mr_publisher"
+    module: "src.adapters.gitlab_adapter.GitLabAdapter"
+    purpose: "Publish merge request comments and apply Argus verdict labels."
+
+triggers:
+  - event: "merge_request_created"
+    source: "gitlab"
+  - event: "merge_request_updated"
+    source: "gitlab"
+
+actions:
+  - id: "enforce_fail_closed"
+    behavior: "Block merge via non-zero CI exit on VULNERABLE/UNVERIFIED/ERROR outcomes."
+  - id: "post_structured_mr_comment"
+    behavior: "Post machine+human-readable verification summary to the merge request."
+  - id: "apply_verdict_labels"
+    behavior: "Apply argus:verified | argus:fixed | argus:vulnerable labels on MR."
+  - id: "emit_audit_artifacts"
+    behavior: "Generate JSON, Markdown, SARIF, GitLab SAST, CI gates, and trace artifacts."
+
+contracts:
+  outputs:
+    - "argus_report.json"
+    - "Argus_Audit_Report.md"
+    - "argus-sarif-report.json"
+    - "gl-sast-report.json"
+    - "argus-ci-gates.json"
+    - ".argus-trace/**"
+  fail_closed: true

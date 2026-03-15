@@ -1,6 +1,24 @@
 # Product Requirements Document (PRD): ArgusV2
 **GitLab AI Hackathon Edition**
 
+## Custom Public Agent & Flow (Judge 60-second check)
+- **Custom agent**: `Argus Verified Repair` → `config.yml` + `.gitlab/duo/agent-config.yml`
+- **Public flow**: `.gitlab/duo/flows/argus_verify.yml`
+- **Trigger proof**: `.gitlab-ci.yml` (`argus-verify` runs on merge request events via `$CI_MERGE_REQUEST_IID`)
+
+### What happens autonomously
+Trigger → discover obligations → translate to Lean/Dafny → verify/proof-search/repair → report artifacts → enforce fail-closed CI result (+ MR comments/labels when token is configured).
+
+### Agent/Flow file map
+| File | Purpose |
+|---|---|
+| `config.yml` | Public custom agent identity, capabilities, triggers, actions |
+| `.gitlab/duo/agent-config.yml` | Runtime image, env contract, trigger/action capabilities |
+| `.gitlab/duo/flows/argus_verify.yml` | Declarative flow stages mapped to runtime pipeline |
+| `.gitlab-ci.yml` | Event trigger + enforcement execution path |
+| `docs/quickstart.md` | Reproducible fork-to-observed-action walkthrough |
+| `docs/submission-text.md` | Devpost-ready requirement language + judge FAQ |
+
 _Status legend:_ `Current` = implemented in this repository today, `Target` = planned end-state.
 
 ## 1. Project Overview & Vision
