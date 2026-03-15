@@ -86,12 +86,17 @@ Stabilize end-to-end autonomous behavior so outcomes are deterministic, fail-clo
 ---
 
 ## Phase 3 — Anthropic Impact Track
-**Status:** NOT STARTED (in this pass)
+**Status:** NOT STARTED
 
 ### Planned work
-- [ ] Provider abstraction (`anthropic|gemini|hybrid`).
-- [ ] Provenance in trace/report artifacts.
-- [ ] Anthropic-mode benchmark and fail-closed fallback checks.
+- [ ] **Step 3.1**: Create `src/core/llm_provider.py` — `LLMClient` protocol, `AnthropicClient`, `GeminiClient`, `create_llm_client()` factory with fail-closed credential checks.
+- [ ] **Step 3.2**: Extend `PipelineConfig` (add `provider` field, default `"anthropic"`) and CLI (add `--provider` argument).
+- [ ] **Step 3.3**: Refactor 4 call sites (`invariant_discovery.py`, `repair.py`, `proof_search.py`, `llm_translator.py`) to use `LLMClient` instead of direct `genai` calls.
+- [ ] **Step 3.4**: Add provider provenance to trace manifests, JSON/SARIF reports, and MR comments.
+- [ ] **Step 3.5**: Add `anthropic` SDK to `requirements.txt`.
+- [ ] **Step 3.6**: Update tests — new `tests/test_llm_provider.py`, refactor existing mocks to use `LLMClient`.
+- [ ] **Step 3.7**: Update `config.yml`, `agent-config.yml`, `docs/submission-text.md` with Anthropic-first messaging.
+- [ ] **Step 3.8**: Validate end-to-end Anthropic mode on seeded benchmark corpus.
 
 ---
 
