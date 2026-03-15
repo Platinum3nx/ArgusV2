@@ -17,7 +17,7 @@ This guide gets you from fork to observable autonomous MR action in ~10 minutes.
 3. Ensure pipeline minutes/runners are available.
 
 ## 2) Trigger the autonomous flow
-1. Create a branch and modify/add a Python file under `src/`.
+1. Create a branch and add or modify a Python file. Any `.py` file outside `tests/`, `benchmarks/`, and `legacy/` is audited — `demo_target/` is a good place to add a test file.
 2. Open a merge request into `main`.
 3. The `argus-verify` job auto-runs on MR events (`$CI_MERGE_REQUEST_IID` rule).
 
