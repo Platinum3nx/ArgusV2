@@ -57,7 +57,7 @@
       "details": "ok"
     }
   ],
-  "run_id": "2026-03-15T00-59-17-562838Z",
+  "run_id": "2026-03-15T04-01-58-776739Z",
   "report_files": [
     {
       "filename": "benchmarks/seeded/vulnerable/negative_withdrawal.py",
@@ -67,9 +67,9 @@
     },
     {
       "filename": "benchmarks/seeded/safe/saturating_withdrawal.py",
-      "verdict": "VULNERABLE",
+      "verdict": "VERIFIED",
       "engine": "lean",
-      "message": "One or more canonical obligations failed"
+      "message": "All obligations passed"
     },
     {
       "filename": "benchmarks/seeded/drift/uniqueness_probe.py",

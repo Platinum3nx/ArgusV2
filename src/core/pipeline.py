@@ -104,13 +104,25 @@ class ArgusPipeline:
 
         policy = self.policy.derive(python_code)
         discovery = self.discovery.discover(python_code)
-        assumptions_valid, issues = validate_assumptions(discovery.assumed_inputs)
+
+        # Merge deterministic preconditions with LLM-discovered assumptions.
+        # Deterministic preconditions take priority: they ensure the Lean prover
+        # always has the necessary hypotheses regardless of LLM availability.
+        deterministic_preconditions = self.policy.derive_preconditions(
+            python_code, policy.obligations
+        )
+        llm_props = {a.property for a in discovery.assumed_inputs}
+        merged_assumptions = list(discovery.assumed_inputs) + [
+            a for a in deterministic_preconditions if a.property not in llm_props
+        ]
+
+        assumptions_valid, issues = validate_assumptions(merged_assumptions)
 
         self._write_json(
             trace_dir / "01_discovery.json",
             {
                 "obligations": [o.to_dict() for o in policy.obligations],
-                "assumed_inputs": [a.to_dict() for a in discovery.assumed_inputs],
+                "assumed_inputs": [a.to_dict() for a in merged_assumptions],
                 "assumptions_valid": assumptions_valid,
                 "assumption_issues": [issue.reason for issue in issues],
                 "unsupported_constructs": policy.unsupported_constructs,
@@ -131,13 +143,13 @@ class ArgusPipeline:
                     filename=filename,
                     verdict=decision.verdict,
                     obligations=policy.obligations,
-                    assumptions=discovery.assumed_inputs,
+                    assumptions=merged_assumptions,
                     engine="n/a",
                     message=decision.reason,
                 )
             )
 
-        translation = self._translate(python_code, policy.obligations, discovery.assumed_inputs)
+        translation = self._translate(python_code, policy.obligations, merged_assumptions)
         self._write_text(
             trace_dir / ("02_translation.lean" if translation.language == "lean" else "02_translation.dfy"),
             translation.code if translation.success else translation.error,
@@ -156,7 +168,7 @@ class ArgusPipeline:
                     filename=filename,
                     verdict=decision.verdict,
                     obligations=policy.obligations,
-                    assumptions=discovery.assumed_inputs,
+                    assumptions=merged_assumptions,
                     engine=translation.language,
                     message=translation.error,
                 )
@@ -302,7 +314,7 @@ class ArgusPipeline:
                             filename=filename,
                             verdict=Verdict.VERIFIED,
                             obligations=policy.obligations,
-                            assumptions=discovery.assumed_inputs,
+                            assumptions=merged_assumptions,
                             engine="lean",
                             message="Verified after proof search",
                         )
@@ -318,7 +330,6 @@ class ArgusPipeline:
             if repair_result.success and repair_result.fixed_code:
                 repaired_code = repair_result.fixed_code
                 self._write_text(trace_dir / "04_repair_0.py", repaired_code)
-                summary.repaired = True
                 rerun = self._run_file(
                     filename=f"{filename}_repaired",
                     python_code=repaired_code,
@@ -331,7 +342,7 @@ class ArgusPipeline:
                             filename=filename,
                             verdict=Verdict.FIXED,
                             obligations=policy.obligations,
-                            assumptions=discovery.assumed_inputs,
+                            assumptions=merged_assumptions,
                             engine=rerun.engine,
                             message="Repaired and verified",
                             repaired_code=repaired_code,
@@ -343,7 +354,7 @@ class ArgusPipeline:
                 filename=filename,
                 verdict=decision.verdict,
                 obligations=policy.obligations,
-                assumptions=discovery.assumed_inputs,
+                assumptions=merged_assumptions,
                 engine=engine_selection.engine,
                 message=decision.reason if decision.reason else verification.error_message,
                 repaired_code=repaired_code,

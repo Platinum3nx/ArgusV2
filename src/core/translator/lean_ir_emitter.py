@@ -61,6 +61,7 @@ class LeanIREmitter:
                 "  try split_ifs at *",
                 "  simp_all",
                 "  try linarith",
+                "  try omega",
             ]
         if vc.proof_kind == "bounds":
             return [
@@ -68,6 +69,7 @@ class LeanIREmitter:
                 "  try split_ifs at *",
                 "  simp_all",
                 "  try linarith",
+                "  try omega",
             ]
         if vc.proof_kind == "uniqueness":
             return [

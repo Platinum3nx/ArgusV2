@@ -4,17 +4,20 @@
     {
       "id": "vuln_withdraw_no_bounds",
       "path": "vulnerable/negative_withdrawal.py",
-      "expected": "blocking"
+      "expected": "blocking",
+      "expected_verdict": "VULNERABLE"
     },
     {
       "id": "safe_saturating_withdraw",
       "path": "safe/saturating_withdrawal.py",
-      "expected": "supported"
+      "expected": "supported",
+      "expected_verdict": "VERIFIED"
     },
     {
       "id": "drift_uniqueness_probe",
       "path": "drift/uniqueness_probe.py",
-      "expected": "blocking"
+      "expected": "blocking",
+      "expected_verdict": "VULNERABLE"
     }
   ]
 }

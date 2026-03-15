@@ -17,6 +17,7 @@ from .reporter import FileReport
 from .equivalence import run_equivalence_check
 from .semantic_guard import run_semantic_guard
 from .translator import ASTTranslator, DafnyTranslator
+from .verifier import LeanVerifier
 
 
 @dataclass(frozen=True)
@@ -129,8 +130,8 @@ def run_ci_integrity_suite(
         trace_root=trace_root,
         run_id=run_id,
     )
-    mutation_gate = _mutation_gate(files)
-    benchmark_gate = _seeded_benchmark_gate(benchmark_root)
+    mutation_gate = _mutation_gate(files, reports=reports)
+    benchmark_gate = _seeded_benchmark_gate(benchmark_root, report_by_file)
 
     gates = [
         CIGateResult(
@@ -233,13 +234,30 @@ def _traceability_gate(
     )
 
 
-def _mutation_gate(files: Sequence[Tuple[str, str]]) -> CIGateResult:
+def _mutation_gate(
+    files: Sequence[Tuple[str, str]],
+    reports: Sequence[FileReport] | None = None,
+) -> CIGateResult:
+    """Mutation kill-rate gate.
+
+    Only tests files whose actual pipeline verdict is VERIFIED — mutations of
+    verified code must break the proof (kill rate ≥ 95%).  VULNERABLE files are
+    skipped: the verifier already correctly flags them, so mutations add no signal.
+    """
+    report_verdicts: Dict[str, Verdict] = {r.filename: r.verdict for r in reports} if reports else {}
     failures: List[str] = []
     for filename, code in files:
+        actual_verdict = report_verdicts.get(filename)
+        # Only run mutation testing on files that are actually VERIFIED.
+        if actual_verdict is not None and actual_verdict != Verdict.VERIFIED:
+            continue
+        evaluator = _evaluate_mutation_with_lean if actual_verdict == Verdict.VERIFIED else _evaluate_mutation
+        original_verdict = actual_verdict if actual_verdict is not None else evaluator(code)
         gate = mutation_kill_rate_gate(
             original_code=code,
-            evaluate_mutation=_evaluate_mutation,
+            evaluate_mutation=evaluator,
             minimum_kill_rate=0.95,
+            original_verdict=original_verdict,
         )
         if not gate.passed:
             failures.append(f"{filename}:{gate.details}")
@@ -250,7 +268,10 @@ def _mutation_gate(files: Sequence[Tuple[str, str]]) -> CIGateResult:
     )
 
 
-def _seeded_benchmark_gate(benchmark_root: Path | None) -> CIGateResult:
+def _seeded_benchmark_gate(
+    benchmark_root: Path | None,
+    report_by_file: Dict[str, FileReport] | None = None,
+) -> CIGateResult:
     if benchmark_root is None:
         return CIGateResult(
             name="seeded-benchmark-gate",
@@ -309,6 +330,20 @@ def _seeded_benchmark_gate(benchmark_root: Path | None) -> CIGateResult:
         else:
             failures.append(f"{rel_path}:unknown_expected:{expected}")
 
+        # Validate pipeline verdict against expected_verdict when a report is available.
+        expected_verdict = case.get("expected_verdict")
+        if expected_verdict and report_by_file is not None:
+            # Report keys are prefixed with the path from benchmark root's parent.
+            # e.g. "benchmarks/seeded/vulnerable/negative_withdrawal.py"
+            report_key = f"benchmarks/seeded/{rel_path}"
+            report = report_by_file.get(report_key)
+            if report is None:
+                failures.append(f"{rel_path}:no_pipeline_report_for_verdict_check")
+            elif report.verdict.value != expected_verdict:
+                failures.append(
+                    f"{rel_path}:verdict_mismatch:expected={expected_verdict}:got={report.verdict.value}"
+                )
+
     return CIGateResult(
         name="seeded-benchmark-gate",
         passed=not failures,
@@ -316,25 +351,56 @@ def _seeded_benchmark_gate(benchmark_root: Path | None) -> CIGateResult:
     )
 
 
-def _evaluate_mutation(mutated_code: str) -> Verdict:
-    policy = ObligationPolicy().derive(mutated_code)
+def _evaluate_mutation(code: str) -> Verdict:
+    """Return the policy-level verdict for a piece of code (no live verifier call)."""
+    policy = ObligationPolicy().derive(code)
     if policy.unsupported_constructs:
         return Verdict.UNVERIFIED
     if not policy.obligations:
         return Verdict.VERIFIED
 
-    if _contains_loop(mutated_code):
-        translation = DafnyTranslator().translate(mutated_code, policy.obligations, [])
+    if _contains_loop(code):
+        translation = DafnyTranslator().translate(code, policy.obligations, [])
     else:
-        translation = ASTTranslator().translate(mutated_code, policy.obligations, [])
+        translation = ASTTranslator().translate(code, policy.obligations, [])
 
     if not translation.success:
         return Verdict.UNVERIFIED
 
-    guard = run_semantic_guard(mutated_code, translation.code, policy.obligations)
+    guard = run_semantic_guard(code, translation.code, policy.obligations)
     if not guard.passed:
         return Verdict.UNVERIFIED
     return Verdict.VULNERABLE
+
+
+def _evaluate_mutation_with_lean(code: str) -> Verdict:
+    """Return the actual Lean verification verdict for code (used for mutation testing)."""
+    try:
+        policy = ObligationPolicy()
+        policy_result = policy.derive(code)
+        if policy_result.unsupported_constructs:
+            return Verdict.UNVERIFIED
+        if not policy_result.obligations:
+            return Verdict.VERIFIED
+
+        preconditions = policy.derive_preconditions(code, policy_result.obligations)
+
+        if _contains_loop(code):
+            translation = DafnyTranslator().translate(code, policy_result.obligations, preconditions)
+        else:
+            translation = ASTTranslator().translate(code, policy_result.obligations, preconditions)
+
+        if not translation.success:
+            return Verdict.UNVERIFIED
+
+        verifier = LeanVerifier(require_docker=False)
+        result = verifier.verify(translation.code, policy_result.obligations)
+        if result.verification_error:
+            return Verdict.ERROR
+        all_passed = all(r.verified for r in result.obligation_results)
+        return Verdict.VERIFIED if all_passed else Verdict.VULNERABLE
+    except Exception:
+        return Verdict.ERROR
 
 
 def _contains_loop(code: str) -> bool:

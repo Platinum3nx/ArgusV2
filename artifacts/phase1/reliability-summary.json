@@ -2,9 +2,9 @@
   "runs": 20,
   "files_per_run": 3,
   "total_file_executions": 60,
-  "p50_latency_ms": 929.33,
-  "p95_latency_ms": 1059.43,
-  "max_latency_ms": 1078.07,
+  "p50_latency_ms": 1370.54,
+  "p95_latency_ms": 2717.32,
+  "max_latency_ms": 9532.97,
   "verdict_stability": {
     "benchmarks/seeded/vulnerable/negative_withdrawal.py": true,
     "benchmarks/seeded/safe/saturating_withdrawal.py": true,

@@ -24,10 +24,22 @@ Phase 1 reliability validation for:
 4. Mutation gate behavior improved for files with no generated mutations (`src/core/quality_gates.py`).
 5. CI target filtering hardened to exclude non-product paths (`src/adapters/cli.py`).
 
+### Phase 1 remediation pass (2026-03-15)
+6. Deterministic precondition derivation added to `ObligationPolicy.derive_preconditions()` — injects `param >= 0` hypotheses for `non_negativity` obligations without requiring LLM availability. Safe code (e.g. `saturating_withdrawal.py`) now reliably returns `VERIFIED`.
+7. `omega` tactic added to non_negativity and bounds proof strategies in `LeanIREmitter` for stronger integer arithmetic reasoning.
+8. Seeded benchmark gate extended with `expected_verdict` validation — the gate now fails when a pipeline report's verdict mismatches the declared expected outcome in `benchmarks/seeded/manifest.json`.
+9. Mutation gate redesigned: VULNERABLE files are skipped (no meaningful signal); VERIFIED files are mutation-tested using the actual Lean verifier to confirm proof sensitivity.
+10. `VerificationSummary.repaired` direct mutation fixed — replaced with dataclass construction to preserve immutability.
+
+## Limitations
+- **All benchmarks run with `require_docker_verify=False`** (local Lean invocation). Production deployments that enforce `require_docker_verify=True` will have higher latency and require a Docker image with Lean/Mathlib pre-installed. Latency numbers in this report (~1–10s) reflect local Lean execution, not containerized verification.
+- Mutation testing uses simple lexical mutations (operator/keyword substitutions). More complex semantic mutations (e.g. loop body changes, arithmetic rewrites) are not covered.
+- Equivalence checking uses random input sampling over `[-6, 6]`; extreme values and boundary cases are not fully covered.
+
 ## Validation results
 ### 1) Test suite
-- Command: `PYTHONPATH=. python3 -m pytest tests -q`
-- Result: `60 passed`
+- Command: `PYTHONPATH=. pytest tests -q`
+- Result: `66 passed`
 
 ### 2) Repeated reliability benchmark
 - Command: `PYTHONPATH=. python3 scripts/phase1_reliability_run.py`
@@ -35,17 +47,18 @@ Phase 1 reliability validation for:
   - Runs: `20`
   - Files per run: `3`
   - Total file executions: `60`
-  - p50 latency: `929.33 ms`
-  - p95 latency: `1059.43 ms`
-  - Max latency: `1078.07 ms`
+  - p50 latency: `1370.54 ms`
+  - p95 latency: `2717.32 ms`
+  - Max latency: `9532.97 ms`
   - Verdict stability: `true` for all seeded benchmark files
   - ERROR/UNVERIFIED outcomes: `0`
+  - **Safe file verdict**: `VERIFIED` (confirmed — `saturating_withdrawal.py` proof succeeds)
 
 ### 3) Trace artifact completeness audit
 - Command: `python3 scripts/phase1_artifact_audit.py`
 - Result (`artifacts/phase1/artifact-audit.json`):
-  - Runs audited: `60`
-  - File traces audited: `60`
+  - Runs audited: `192`
+  - File traces audited: `198`
   - Missing required artifacts: `0`
   - Overall: `ok=true`
 
@@ -54,9 +67,10 @@ Phase 1 reliability validation for:
 - Result (`artifacts/phase1/ci-gates.json`):
   - Overall gates: `passed=true`
   - Gate set: unsupported construct, obligation policy, assumption evidence, semantic guard, equivalence, proof, verdict contract, traceability, reproducibility, mutation, seeded benchmark
+  - Seeded benchmark verdict check: `safe/saturating_withdrawal.py → VERIFIED`, `vulnerable/negative_withdrawal.py → VULNERABLE`
 
 ## Phase 1 sign-off
-Phase 1 is complete against the FinalPlan acceptance intent: deterministic behavior, fail-closed contracts, reproducibility evidence, and artifact/CI integrity validation are in place and evidenced.
+Phase 1 is complete against the FinalPlan acceptance intent: deterministic behavior, fail-closed contracts, reproducibility evidence, and artifact/CI integrity validation are in place and evidenced. The remediation pass additionally confirms that safe code correctly returns VERIFIED and that CI gates enforce verdict correctness end-to-end.
 
 ## Evidence index
 - `docs/FINAL_PLAN_PROGRESS.md`

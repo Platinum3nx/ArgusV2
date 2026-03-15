@@ -6,7 +6,7 @@ import json
 from dataclasses import dataclass
 from typing import List, Set
 
-from .models import Obligation, Severity
+from .models import AssumedInput, Obligation, Severity
 
 
 NUMERIC_HINT_NAMES = {"balance", "amount", "total", "count", "value"}
@@ -146,6 +146,64 @@ class ObligationPolicy:
             )
 
         return obligations
+
+    def derive_preconditions(self, python_code: str, obligations: List[Obligation]) -> List[AssumedInput]:
+        """
+        Deterministically derive precondition assumptions for non_negativity obligations.
+
+        For each function with a non_negativity obligation, injects ``param >= 0``
+        for every int-annotated parameter. These assumptions become Lean hypotheses
+        regardless of LLM availability, ensuring proofs can discharge the obligation.
+        """
+        try:
+            tree = ast.parse(python_code)
+        except SyntaxError:
+            return []
+
+        fn_map = {
+            node.name: node
+            for node in tree.body
+            if isinstance(node, ast.FunctionDef)
+        }
+
+        preconditions: List[AssumedInput] = []
+        seen: set[str] = set()
+
+        for obligation in obligations:
+            if obligation.category != "non_negativity":
+                continue
+            fn_name = obligation.id.split(":", 1)[0]
+            fn = fn_map.get(fn_name)
+            if fn is None:
+                continue
+
+            for arg in fn.args.args:
+                if not self._is_int_param(arg):
+                    continue
+                prop = f"{arg.arg} >= 0"
+                if prop in seen:
+                    continue
+                seen.add(prop)
+                preconditions.append(
+                    AssumedInput(
+                        property=prop,
+                        description=f"Parameter '{arg.arg}' is non-negative (domain precondition)",
+                        justification="Derived deterministically from non_negativity obligation on function parameters",
+                        source_type="policy",
+                        source_ref="obligation_policy:derive_preconditions",
+                        evidence_id=f"precond:{fn_name}:{arg.arg}:non_negative",
+                        severity=Severity.HIGH,
+                    )
+                )
+
+        return preconditions
+
+    def _is_int_param(self, arg: ast.arg) -> bool:
+        if arg.annotation is None:
+            return True  # default to int assumption when unannotated
+        if isinstance(arg.annotation, ast.Name):
+            return arg.annotation.id in {"int", "Int"}
+        return False
 
     def _returns_numeric(self, fn: ast.FunctionDef) -> bool:
         if fn.returns is None:

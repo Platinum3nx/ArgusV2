@@ -57,7 +57,15 @@ def mutation_kill_rate_gate(
     original_code: str,
     evaluate_mutation: Callable[[str], Verdict],
     minimum_kill_rate: float = 0.95,
+    original_verdict: Verdict | None = None,
 ) -> GateResult:
+    """
+    Compute the mutation kill rate for a piece of code.
+
+    A mutation is considered "killed" when its verdict DIFFERS from the original
+    verdict (i.e., the verification pipeline detected the semantic change).
+    If ``original_verdict`` is not provided, it is computed via ``evaluate_mutation``.
+    """
     mutations = generate_simple_mutations(original_code)
     if not mutations:
         return GateResult(
@@ -66,10 +74,12 @@ def mutation_kill_rate_gate(
             details="skipped: no mutations generated",
         )
 
+    base_verdict = original_verdict if original_verdict is not None else evaluate_mutation(original_code)
+
     killed = 0
     for mutated in mutations:
         verdict = evaluate_mutation(mutated)
-        if verdict in {Verdict.VULNERABLE, Verdict.UNVERIFIED, Verdict.ERROR}:
+        if verdict != base_verdict:
             killed += 1
 
     rate = killed / len(mutations)
@@ -77,7 +87,7 @@ def mutation_kill_rate_gate(
     return GateResult(
         name="mutation-kill-rate",
         passed=passed,
-        details=f"killed={killed}/{len(mutations)} rate={rate:.3f}",
+        details=f"killed={killed}/{len(mutations)} rate={rate:.3f} base={base_verdict.value}",
     )
 
 
