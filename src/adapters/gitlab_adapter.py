@@ -52,8 +52,14 @@ class GitLabAdapter:
     def configured(self) -> bool:
         return all([self.url, self.token, self.project_id, self.merge_request_iid])
 
-    def publish_results(self, files: Sequence[FileReport], dry_run: bool = False) -> GitLabPublishResult:
-        comment = self.build_comment(files)
+    def publish_results(
+        self,
+        files: Sequence[FileReport],
+        dry_run: bool = False,
+        provider: str = "",
+        model: str = "",
+    ) -> GitLabPublishResult:
+        comment = self.build_comment(files, provider=provider, model=model)
         labels = self.derive_labels(files)
 
         if not self.configured():
@@ -107,10 +113,15 @@ class GitLabAdapter:
                 comment=comment,
             )
 
-    def build_comment(self, files: Sequence[FileReport]) -> str:
+    def build_comment(
+        self,
+        files: Sequence[FileReport],
+        provider: str = "",
+        model: str = "",
+    ) -> str:
         commit = (os.getenv("CI_COMMIT_SHA") or "local")[:8]
         timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%SZ")
-        body = render_mr_comment(list(files))
+        body = render_mr_comment(list(files), provider=provider, model=model)
         return f"**Commit**: `{commit}` | **Generated**: {timestamp}\n\n{body}"
 
     def derive_labels(self, files: Sequence[FileReport]) -> List[str]:

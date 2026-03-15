@@ -1,16 +1,10 @@
 from __future__ import annotations
 
-import os
 from dataclasses import dataclass
 from pathlib import Path
-from types import SimpleNamespace
 from typing import List
 
-try:
-    from google import genai
-except Exception:  # pragma: no cover - optional dependency in test envs
-    genai = SimpleNamespace(Client=None)
-
+from .llm_provider import LLMClient
 from .models import Obligation
 
 
@@ -33,8 +27,8 @@ class RepairResult:
 
 
 class RepairEngine:
-    def __init__(self, model: str = "gemini-2.5-pro", max_attempts: int = 3) -> None:
-        self.model = model
+    def __init__(self, llm_client: LLMClient, max_attempts: int = 3) -> None:
+        self.llm_client = llm_client
         self.max_attempts = max_attempts
 
     def repair(self, python_code: str, error_message: str, obligations: List[Obligation]) -> RepairResult:
@@ -61,12 +55,6 @@ class RepairEngine:
     def _generate_fix(
         self, python_code: str, error_message: str, obligations: List[Obligation]
     ) -> tuple[str | None, str]:
-        api_key = os.getenv("GEMINI_API_KEY")
-        if not api_key:
-            return None, "GEMINI_API_KEY is not configured"
-        if getattr(genai, "Client", None) is None:
-            return None, "google-genai is not installed"
-
         obligations_text = "\n".join(f"- {item.property}" for item in obligations) or "- none"
         prompt = self._load_prompt()
         contents = (
@@ -76,11 +64,9 @@ class RepairEngine:
             f"Python code:\n{python_code}"
         )
         try:
-            client = genai.Client(api_key=api_key)
-            response = client.models.generate_content(model=self.model, contents=contents)
-            fixed_code = (response.text or "").strip()
+            fixed_code = self.llm_client.generate(contents)
             if not fixed_code:
-                return None, "Gemini returned empty fix"
+                return None, f"{self.llm_client.provider_name} returned empty fix"
             return fixed_code, ""
         except Exception as exc:
             return None, str(exc)
@@ -89,4 +75,3 @@ class RepairEngine:
         if PROMPT_PATH.exists():
             return PROMPT_PATH.read_text(encoding="utf-8")
         return "Fix the Python code so all obligations are satisfied. Return code only."
-from types import SimpleNamespace

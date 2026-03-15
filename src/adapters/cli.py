@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 from pathlib import Path
 from typing import List, Tuple
 
 from src.adapters.gitlab_adapter import GitLabAdapter
 from src.core.ci_integrity import CIGateReport, run_ci_integrity_suite
+from src.core.llm_provider import ConfigurationError, create_llm_client
 from src.core.pipeline import ArgusPipeline, PipelineConfig
 from src.core.reporter import (
     dump_json,
@@ -24,7 +26,22 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--file", type=str, help="Single Python file to audit")
     parser.add_argument("--repo-path", type=str, default=".", help="Repository path")
     parser.add_argument("--mode", type=str, default="single", choices=["single", "ci"])
-    parser.add_argument("--base-ref", type=str, default=None, help="Base ref for changed file detection in CI mode")
+    parser.add_argument(
+        "--base-ref", type=str, default=None, help="Base ref for changed file detection in CI mode"
+    )
+    parser.add_argument(
+        "--provider",
+        type=str,
+        default=None,
+        choices=["anthropic", "gemini"],
+        help="LLM provider (default: LLM_PROVIDER env var or 'anthropic')",
+    )
+    parser.add_argument(
+        "--model",
+        type=str,
+        default=None,
+        help="Model override (default: claude-sonnet-4-6 for anthropic, gemini-2.5-pro for gemini)",
+    )
     parser.add_argument("--output-json", type=str, default="argus_report.json")
     parser.add_argument("--output-md", type=str, default="Argus_Audit_Report.md")
     parser.add_argument("--output-sarif", type=str, default="argus-sarif-report.json")
@@ -44,13 +61,30 @@ def main() -> int:
         print(json.dumps({"status": "no-python-files-found"}, indent=2))
         return 0
 
-    config = PipelineConfig(require_docker_verify=not args.allow_local_verify)
-    pipeline = ArgusPipeline(config=config)
+    # Resolve provider: CLI arg > LLM_PROVIDER env var > default "anthropic"
+    provider = args.provider or os.getenv("LLM_PROVIDER", "anthropic")
+    model = args.model  # None means use provider default
+
+    try:
+        llm_client = create_llm_client(provider, model)
+    except ConfigurationError as exc:
+        print(json.dumps({"status": "configuration-error", "error": str(exc)}, indent=2))
+        return 1
+
+    config = PipelineConfig(
+        provider=provider,
+        model=llm_client.model_id,
+        require_docker_verify=not args.allow_local_verify,
+    )
+    pipeline = ArgusPipeline(config=config, llm_client=llm_client)
     reports = pipeline.run_many(files)
 
-    json_payload = render_json_report(reports)
+    prov = llm_client.provider_name
+    mdl = llm_client.model_id
+
+    json_payload = render_json_report(reports, provider=prov, model=mdl)
     markdown = render_markdown_report(reports)
-    sarif_payload = render_sarif_report(reports)
+    sarif_payload = render_sarif_report(reports, provider=prov, model=mdl)
     gl_sast_payload = render_gitlab_sast_report(reports)
 
     dump_json(args.output_json, json_payload)
@@ -70,7 +104,9 @@ def main() -> int:
         dump_json(args.output_ci_gates, ci_gate_report.to_dict())
 
         if not args.skip_gitlab_publish:
-            gitlab_result = GitLabAdapter.from_env().publish_results(reports)
+            gitlab_result = GitLabAdapter.from_env().publish_results(
+                reports, provider=prov, model=mdl
+            )
             print(json.dumps({"gitlab_publish": gitlab_result.reason}, indent=2))
 
     print(json.dumps(json_payload["summary"], indent=2))

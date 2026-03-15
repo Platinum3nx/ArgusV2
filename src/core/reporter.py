@@ -19,9 +19,15 @@ class FileReport:
     message: str
 
 
-def render_json_report(files: List[FileReport]) -> Dict[str, Any]:
+def render_json_report(
+    files: List[FileReport],
+    provider: str = "",
+    model: str = "",
+) -> Dict[str, Any]:
     payload = {
         "tool": "ArgusV2",
+        "provider": provider,
+        "model": model,
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "summary": {
             "total": len(files),
@@ -74,18 +80,22 @@ def render_markdown_report(files: List[FileReport]) -> str:
     return "\n".join(lines)
 
 
-def render_mr_comment(files: List[FileReport]) -> str:
-    report = render_json_report(files)
+def render_mr_comment(
+    files: List[FileReport],
+    provider: str = "",
+    model: str = "",
+) -> str:
+    report = render_json_report(files, provider=provider, model=model)
     summary = report["summary"]
     lines = [
-        "## 🛡️ Argus Formal Verification Report",
+        "## Argus Formal Verification Report",
         "",
         (
             f"**Files Audited**: {summary['total']} | "
-            f"✅ Verified: {summary['verified']} | "
-            f"🔧 Fixed: {summary['fixed']} | "
-            f"❌ Vulnerable: {summary['vulnerable']} | "
-            f"⛔ Unverified/Error: {summary['unverified'] + summary['error']}"
+            f"Verified: {summary['verified']} | "
+            f"Fixed: {summary['fixed']} | "
+            f"Vulnerable: {summary['vulnerable']} | "
+            f"Unverified/Error: {summary['unverified'] + summary['error']}"
         ),
         "",
         "| File | Verdict | Finding |",
@@ -93,10 +103,18 @@ def render_mr_comment(files: List[FileReport]) -> str:
     ]
     for item in files:
         lines.append(f"| `{item.filename}` | {item.verdict.value} | {item.message or 'n/a'} |")
+    if provider:
+        provider_label = f"Anthropic {model}" if provider == "anthropic" else f"Google Gemini ({model})"
+        lines.append("")
+        lines.append(f"**Reasoning Provider**: {provider_label} | **Verification Engine**: Lean 4 / Dafny")
     return "\n".join(lines)
 
 
-def render_sarif_report(files: List[FileReport]) -> Dict[str, Any]:
+def render_sarif_report(
+    files: List[FileReport],
+    provider: str = "",
+    model: str = "",
+) -> Dict[str, Any]:
     """
     SARIF 2.1.0 output focused on actionable non-VERIFIED outcomes.
     """
@@ -151,19 +169,26 @@ def render_sarif_report(files: List[FileReport]) -> Dict[str, Any]:
             }
         )
 
+    driver_properties: Dict[str, Any] = {}
+    if provider:
+        driver_properties["provider"] = provider
+        driver_properties["model"] = model
+
+    driver: Dict[str, Any] = {
+        "name": "ArgusV2",
+        "version": "2.1.0",
+        "informationUri": "https://gitlab.com",
+        "rules": rules,
+    }
+    if driver_properties:
+        driver["properties"] = driver_properties
+
     return {
         "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
         "version": "2.1.0",
         "runs": [
             {
-                "tool": {
-                    "driver": {
-                        "name": "ArgusV2",
-                        "version": "2.0.0",
-                        "informationUri": "https://gitlab.com",
-                        "rules": rules,
-                    }
-                },
+                "tool": {"driver": driver},
                 "results": results,
             }
         ],

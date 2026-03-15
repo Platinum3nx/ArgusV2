@@ -1,19 +1,13 @@
 from __future__ import annotations
 
 import json
-import os
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from types import SimpleNamespace
-from typing import List
-
-try:
-    from google import genai
-except Exception:  # pragma: no cover - optional dependency in test envs
-    genai = SimpleNamespace(Client=None)
+from typing import List, Optional
 
 from .assumption_evidence import validate_assumptions
+from .llm_provider import LLMClient
 from .models import AssumedInput, Obligation, Severity
 from .obligation_policy import ObligationPolicy
 
@@ -32,11 +26,11 @@ class DiscoveryResult:
 class InvariantDiscovery:
     def __init__(
         self,
-        model: str = "gemini-2.5-pro",
+        llm_client: Optional[LLMClient] = None,
         use_llm: bool = True,
     ) -> None:
-        self.model = model
-        self.use_llm = use_llm
+        self.llm_client = llm_client
+        self.use_llm = use_llm and llm_client is not None
         self.policy = ObligationPolicy()
 
     def discover(self, python_code: str) -> DiscoveryResult:
@@ -58,19 +52,13 @@ class InvariantDiscovery:
         )
 
     def _query_llm(self, python_code: str) -> str:
-        api_key = os.getenv("GEMINI_API_KEY")
-        if not api_key:
+        if self.llm_client is None:
             return ""
-        if getattr(genai, "Client", None) is None:
-            return ""
-
         prompt = self._load_prompt()
-        client = genai.Client(api_key=api_key)
-        response = client.models.generate_content(
-            model=self.model,
-            contents=f"{prompt}\n\nPython:\n{python_code}",
-        )
-        return (response.text or "").strip()
+        try:
+            return self.llm_client.generate(f"{prompt}\n\nPython:\n{python_code}")
+        except Exception:
+            return ""
 
     def _load_prompt(self) -> str:
         if PROMPT_PATH.exists():

@@ -1,5 +1,5 @@
 display_name: "Argus Verified Repair"
-description: "A neuro-symbolic DevSecOps agent that uses Gemini and formal verification (Lean 4 / Dafny) to prove security properties before merge."
+description: "A neuro-symbolic DevSecOps agent that uses Anthropic Claude and formal verification (Lean 4 / Dafny) to prove security properties before merge."
 version: "2.1.0"
 
 agent:

@@ -1,30 +1,18 @@
+from src.core.llm_provider import LLMClient
 from src.core.translator.llm_translator import LLMTranslator
 
 
-class _FakeResponse:
-    def __init__(self, text: str) -> None:
-        self.text = text
+class _FakeLLMClient(LLMClient):
+    provider_name = "fake"
+    model_id = "fake-model"
 
-
-class _FakeModels:
-    def generate_content(self, model: str, contents: str) -> _FakeResponse:
-        assert model == "gemini-2.5-pro"
+    def generate(self, contents: str) -> str:
         assert "Python Code" in contents
-        return _FakeResponse("def translated : Int := 0")
+        return "def translated : Int := 0"
 
 
-class _FakeClient:
-    def __init__(self, api_key: str) -> None:
-        self.api_key = api_key
-        self.models = _FakeModels()
-
-
-def test_llm_translator_success(monkeypatch) -> None:
-    monkeypatch.setenv("GEMINI_API_KEY", "test")
-    monkeypatch.setattr("src.core.translator.llm_translator.genai.Client", _FakeClient)
-
-    outcome = LLMTranslator().translate("def f(x): return x", [], [])
+def test_llm_translator_success() -> None:
+    outcome = LLMTranslator(llm_client=_FakeLLMClient()).translate("def f(x): return x", [], [])
     assert outcome.success
     assert outcome.used_llm
     assert "translated" in outcome.code
-

@@ -4,11 +4,12 @@ import json
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
 from .assumption_evidence import validate_assumptions
 from .equivalence import run_equivalence_check
 from .invariant_discovery import InvariantDiscovery
+from .llm_provider import LLMClient, create_llm_client
 from .models import AssumedInput, Obligation, VerificationSummary, Verdict
 from .obligation_policy import ObligationPolicy
 from .proof_search import ProofSearchEngine
@@ -23,7 +24,8 @@ from .verifier import DafnyVerifier, LeanVerifier, VerifierRouter
 
 @dataclass
 class PipelineConfig:
-    model: str = "gemini-2.5-pro"
+    provider: str = "anthropic"
+    model: str = "claude-sonnet-4-6"
     max_repair_attempts: int = 3
     max_proof_search_attempts: int = 3
     trace_root: str = ".argus-trace"
@@ -44,20 +46,32 @@ class PipelineResult:
 
 
 class ArgusPipeline:
-    def __init__(self, config: PipelineConfig | None = None) -> None:
+    def __init__(
+        self,
+        config: PipelineConfig | None = None,
+        llm_client: Optional[LLMClient] = None,
+    ) -> None:
         self.config = config or PipelineConfig()
+
+        # Resolve LLM client: accept injected client (e.g. in tests) or
+        # create via factory (raises ConfigurationError if key/SDK missing).
+        if llm_client is not None:
+            self.llm_client: LLMClient = llm_client
+        else:
+            self.llm_client = create_llm_client(self.config.provider, self.config.model)
+
         self.policy = ObligationPolicy()
-        self.discovery = InvariantDiscovery(model=self.config.model, use_llm=True)
+        self.discovery = InvariantDiscovery(llm_client=self.llm_client, use_llm=True)
         self.repair = RepairEngine(
-            model=self.config.model,
+            llm_client=self.llm_client,
             max_attempts=self.config.max_repair_attempts,
         )
         self.proof_search = ProofSearchEngine(
-            model=self.config.model,
+            llm_client=self.llm_client,
             max_attempts=self.config.max_proof_search_attempts,
         )
         self.ast_translator = ASTTranslator()
-        self.llm_translator = LLMTranslator(model=self.config.model)
+        self.llm_translator = LLMTranslator(llm_client=self.llm_client)
         self.dafny_translator = DafnyTranslator()
         self.lean_verifier = LeanVerifier(require_docker=self.config.require_docker_verify)
         self.dafny_verifier = DafnyVerifier(require_docker=self.config.require_docker_verify)
@@ -95,6 +109,8 @@ class ArgusPipeline:
                     "verdict": result.verdict.value,
                     "engine": result.engine,
                     "message": result.message,
+                    "provider": self.llm_client.provider_name,
+                    "model": self.llm_client.model_id,
                     "obligations": [o.to_dict() for o in result.obligations],
                     "assumptions": [a.to_dict() for a in result.assumptions],
                     "repaired": bool(result.repaired_code),
@@ -425,7 +441,8 @@ class ArgusPipeline:
             "mode": mode,
             "files": filenames,
             "config": {
-                "model": self.config.model,
+                "provider": self.llm_client.provider_name,
+                "model": self.llm_client.model_id,
                 "max_repair_attempts": self.config.max_repair_attempts,
                 "max_proof_search_attempts": self.config.max_proof_search_attempts,
                 "allow_repair": self.config.allow_repair,

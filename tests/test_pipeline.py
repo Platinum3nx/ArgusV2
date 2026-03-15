@@ -1,9 +1,20 @@
 from types import SimpleNamespace
 
-from src.core.pipeline import ArgusPipeline, PipelineConfig
+from src.core.llm_provider import LLMClient
 from src.core.models import ObligationResult, Verdict
+from src.core.pipeline import ArgusPipeline, PipelineConfig
 from src.core.proof_search import ProofSearchResult
 from src.core.verifier.base import VerificationOutcome
+
+
+class _FakeLLMClient(LLMClient):
+    """Minimal LLM client for pipeline tests — returns empty string (graceful no-op)."""
+
+    provider_name = "fake"
+    model_id = "fake-model"
+
+    def generate(self, contents: str) -> str:
+        return ""
 
 
 def test_pipeline_verified_path(monkeypatch, tmp_path) -> None:
@@ -18,7 +29,7 @@ def test_pipeline_verified_path(monkeypatch, tmp_path) -> None:
         require_docker_verify=False,
         trace_root=str(tmp_path / ".argus-trace"),
     )
-    pipeline = ArgusPipeline(config=config)
+    pipeline = ArgusPipeline(config=config, llm_client=_FakeLLMClient())
     result = pipeline.run_file(
         filename="withdraw.py",
         python_code="def withdraw(balance: int, amount: int) -> int:\n    return balance - amount\n",
@@ -33,7 +44,7 @@ def test_pipeline_unverified_on_unsupported_construct(tmp_path) -> None:
         require_docker_verify=False,
         trace_root=str(tmp_path / ".argus-trace"),
     )
-    pipeline = ArgusPipeline(config=config)
+    pipeline = ArgusPipeline(config=config, llm_client=_FakeLLMClient())
     result = pipeline.run_file(
         filename="worker.py",
         python_code="async def worker():\n    return 1\n",
@@ -48,7 +59,7 @@ def test_pipeline_accepts_verified_proof_search_candidate(tmp_path) -> None:
         require_docker_verify=False,
         trace_root=str(tmp_path / ".argus-trace"),
     )
-    pipeline = ArgusPipeline(config=config)
+    pipeline = ArgusPipeline(config=config, llm_client=_FakeLLMClient())
 
     def _fake_verify(proof_code: str, obligations):
         verified = "\n  linarith" in proof_code and "try linarith" not in proof_code

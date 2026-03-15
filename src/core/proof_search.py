@@ -1,17 +1,11 @@
 from __future__ import annotations
 
-import os
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from types import SimpleNamespace
 from typing import List
 
-try:
-    from google import genai
-except Exception:  # pragma: no cover - optional dependency in test envs
-    genai = SimpleNamespace(Client=None)
-
+from .llm_provider import LLMClient
 from .models import Obligation
 
 
@@ -34,8 +28,8 @@ class ProofSearchResult:
 
 
 class ProofSearchEngine:
-    def __init__(self, model: str = "gemini-2.5-pro", max_attempts: int = 3) -> None:
-        self.model = model
+    def __init__(self, llm_client: LLMClient, max_attempts: int = 3) -> None:
+        self.llm_client = llm_client
         self.max_attempts = max_attempts
 
     def search(
@@ -45,13 +39,6 @@ class ProofSearchEngine:
         verifier_error: str,
     ) -> ProofSearchResult:
         attempts: List[ProofAttempt] = []
-        api_key = os.getenv("GEMINI_API_KEY")
-        if not api_key:
-            attempts.append(ProofAttempt(attempt=1, success=False, reason="GEMINI_API_KEY is not configured"))
-            return ProofSearchResult(success=False, proof_code=None, attempts=attempts)
-        if getattr(genai, "Client", None) is None:
-            attempts.append(ProofAttempt(attempt=1, success=False, reason="google-genai is not installed"))
-            return ProofSearchResult(success=False, proof_code=None, attempts=attempts)
 
         prompt = self._load_prompt()
         obligations_text = "\n".join(f"- {item.property}" for item in obligations) or "- none"
@@ -63,7 +50,7 @@ class ProofSearchEngine:
         )
 
         for attempt in range(1, self.max_attempts + 1):
-            candidate, error = self._generate_candidate(context, api_key)
+            candidate, error = self._generate_candidate(context)
             if error:
                 attempts.append(ProofAttempt(attempt=attempt, success=False, reason=error))
                 continue
@@ -107,13 +94,11 @@ class ProofSearchEngine:
 
         return True, "Candidate preserved theorem/function structure"
 
-    def _generate_candidate(self, context: str, api_key: str) -> tuple[str, str]:
+    def _generate_candidate(self, context: str) -> tuple[str, str]:
         try:
-            client = genai.Client(api_key=api_key)
-            response = client.models.generate_content(model=self.model, contents=context)
-            text = (response.text or "").strip()
+            text = self.llm_client.generate(context)
             if not text:
-                return "", "Gemini returned empty proof candidate"
+                return "", f"{self.llm_client.provider_name} returned empty proof candidate"
             return text, ""
         except Exception as exc:
             return "", str(exc)
