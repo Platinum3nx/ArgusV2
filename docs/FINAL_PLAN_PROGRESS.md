@@ -89,14 +89,14 @@ Stabilize end-to-end autonomous behavior so outcomes are deterministic, fail-clo
 **Status:** NOT STARTED
 
 ### Planned work
-- [ ] **Step 3.1**: Create `src/core/llm_provider.py` — `LLMClient` protocol, `AnthropicClient`, `GeminiClient`, `create_llm_client()` factory with fail-closed credential checks.
-- [ ] **Step 3.2**: Extend `PipelineConfig` (add `provider` field, default `"anthropic"`) and CLI (add `--provider` argument).
-- [ ] **Step 3.3**: Refactor 4 call sites (`invariant_discovery.py`, `repair.py`, `proof_search.py`, `llm_translator.py`) to use `LLMClient` instead of direct `genai` calls.
-- [ ] **Step 3.4**: Add provider provenance to trace manifests, JSON/SARIF reports, and MR comments.
-- [ ] **Step 3.5**: Add `anthropic` SDK to `requirements.txt`.
-- [ ] **Step 3.6**: Update tests — new `tests/test_llm_provider.py`, refactor existing mocks to use `LLMClient`.
-- [ ] **Step 3.7**: Update `config.yml`, `agent-config.yml`, `docs/submission-text.md` with Anthropic-first messaging.
-- [ ] **Step 3.8**: Validate end-to-end Anthropic mode on seeded benchmark corpus.
+- [ ] **Step 3.1**: Create `src/core/llm_provider.py` — `LLMClient` contract, `AnthropicClient`, `GeminiClient`, `create_llm_client()` factory with fail-closed `ConfigurationError` on missing keys/SDK.
+- [ ] **Step 3.2**: Extend `PipelineConfig` (add `provider` field, default `"anthropic"`, change model default to `"claude-sonnet-4-6"`) and CLI (add `--provider`, `--model` arguments).
+- [ ] **Step 3.3**: Refactor 4 call sites (`invariant_discovery.py`, `repair.py`, `proof_search.py`, `llm_translator.py`) — remove all direct `genai` imports, use `self.llm_client.generate()`.
+- [ ] **Step 3.4**: Add structured provenance (`{ provider, model }`) to trace manifests, per-file results, JSON/SARIF reports, and MR comments.
+- [ ] **Step 3.5**: Add `anthropic>=0.40.0` to `requirements.txt`.
+- [ ] **Step 3.6**: Tests + fail-closed scenarios — new `tests/test_llm_provider.py` (factory, missing key ×2, empty response, malformed output, exception propagation), refactor existing mocks to `FakeLLMClient`.
+- [ ] **Step 3.7**: Update `config.yml`, `agent-config.yml`, `docs/submission-text.md` — Anthropic-first messaging, `ANTHROPIC_API_KEY` required, `GEMINI_API_KEY` optional.
+- [ ] **Step 3.8**: Validate end-to-end Anthropic mode — ≥3 benchmark runs, 0 false positives, provenance in all artifacts, latency delta documented.
 
 ---
 
