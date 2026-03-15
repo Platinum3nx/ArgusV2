@@ -53,7 +53,19 @@ class DafnyTranslator:
                 error=lowered.error or "Unsupported constructs for Dafny translation",
             )
 
-        return self._translate_loop_fallback(python_code, obligations)
+        # Fail closed for loop-heavy functions unless deterministic lowering supports them.
+        # A synthetic translation that drops source semantics is not acceptable for startup-grade
+        # reliability claims.
+        return TranslationOutcome(
+            success=False,
+            language="dafny",
+            code="",
+            translator="dafny",
+            error=(
+                "Deterministic loop lowering is not yet implemented for Dafny translation. "
+                "Refusing fallback translation to avoid semantic drift."
+            ),
+        )
 
     def _translate_loop_fallback(
         self,

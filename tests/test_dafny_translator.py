@@ -2,7 +2,7 @@ from src.core.models import Obligation
 from src.core.translator.dafny_translator import DafnyTranslator
 
 
-def test_dafny_translator_emits_nonneg_ensures() -> None:
+def test_dafny_translator_fails_closed_for_loop_code_until_lowering_exists() -> None:
     code = """
 def total(balance: int, amount: int) -> int:
     s = 0
@@ -25,9 +25,8 @@ def total(balance: int, amount: int) -> int:
         ),
     ]
     outcome = DafnyTranslator().translate(code, obligations, [])
-    assert outcome.success
-    assert "method total(" in outcome.code
-    assert "ensures result >= 0" in outcome.code
+    assert not outcome.success
+    assert "Deterministic loop lowering is not yet implemented" in outcome.error
 
 
 def test_dafny_translator_fails_for_unsupported_category() -> None:

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ast
 import json
 from dataclasses import dataclass
 from pathlib import Path
@@ -337,4 +338,8 @@ def _evaluate_mutation(mutated_code: str) -> Verdict:
 
 
 def _contains_loop(code: str) -> bool:
-    return "for " in code or "while " in code
+    try:
+        tree = ast.parse(code)
+    except SyntaxError:
+        return False
+    return any(isinstance(node, (ast.For, ast.While)) for node in ast.walk(tree))
