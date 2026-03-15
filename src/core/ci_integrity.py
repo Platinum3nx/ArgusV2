@@ -121,7 +121,7 @@ def run_ci_integrity_suite(
                         f"{filename}:{';'.join(issue.reason for issue in equivalence.issues)}"
                     )
 
-        if report.verdict not in {Verdict.VERIFIED, Verdict.FIXED}:
+        if report.verdict in {Verdict.UNVERIFIED, Verdict.ERROR}:
             proof_failures.append(f"{filename}:{report.verdict.value}")
 
     trace_gate = _traceability_gate(

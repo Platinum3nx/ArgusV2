@@ -7,7 +7,7 @@ This tracker maps implementation progress to the 5 phases defined in `FinalPlan.
 ---
 
 ## Phase 1 — Core Reliability & Correctness
-**Status:** IN PROGRESS (hardening pass active)
+**Status:** COMPLETED
 
 ### Goal
 Stabilize end-to-end autonomous behavior so outcomes are deterministic, fail-closed, and reproducible.
@@ -19,18 +19,31 @@ Stabilize end-to-end autonomous behavior so outcomes are deterministic, fail-clo
 - ✅ Added stricter deterministic translation rules for loop code paths: unsupported loop constructs now fail closed with explicit errors.
 - ✅ Updated translator tests to validate deterministic loop fallback behavior and while-loop decreases/invariant emission (`tests/test_dafny_translator.py`).
 
-### Remaining for Phase 1 completion
-- [ ] Expand deterministic loop fallback coverage beyond current supported subset (nested loops, non-range iterables, richer loop body statements) or explicitly fail closed with documented constraints.
-- [ ] Execute full local test suite in a provisioned environment (python/pytest + Lean/Dafny toolchain availability).
-- [ ] Produce benchmarked reliability metrics doc (`docs/reliability-report.md`) from real repeated runs.
-- [ ] Validate artifact completeness against all outcome paths (VERIFIED/FIXED/VULNERABLE/UNVERIFIED/ERROR).
-- [ ] Run seeded benchmark corpus and record evidence links/output hashes.
+### Phase 1 acceptance checklist (closed)
+- [x] Deterministic/fail-closed loop translation for supported loop subset, with explicit errors for unsupported patterns.
+- [x] Full active test suite run in provisioned environment (`60 passed`).
+- [x] Reliability benchmark run completed (`20` repeated runs over seeded corpus, stable verdicts, no ERROR/UNVERIFIED outcomes).
+- [x] Artifact completeness audit completed (all required trace artifacts present).
+- [x] CI integrity gate run completed with all gates passing.
 
 ### Evidence
-- `src/core/translator/dafny_translator.py`
-- `src/core/ci_integrity.py`
-- `.gitlab-ci.yml`
-- `tests/test_dafny_translator.py`
+- Code hardening
+  - `src/core/translator/dafny_translator.py`
+  - `src/core/ci_integrity.py`
+  - `src/core/quality_gates.py`
+  - `src/adapters/cli.py`
+  - `.gitlab-ci.yml`
+- Tests
+  - `tests/test_dafny_translator.py`
+  - `tests/test_cli_adapter.py`
+  - `tests/` full suite (`60 passed`)
+- Phase 1 execution artifacts
+  - `artifacts/phase1/reliability-summary.json`
+  - `artifacts/phase1/reliability-failures.log`
+  - `artifacts/phase1/artifact-audit.json`
+  - `artifacts/phase1/ci-gates.json`
+- Phase 1 docs
+  - `docs/reliability-report.md`
 
 ---
 

@@ -1,0 +1,15 @@
+{
+  "runs": 20,
+  "files_per_run": 3,
+  "total_file_executions": 60,
+  "p50_latency_ms": 929.33,
+  "p95_latency_ms": 1059.43,
+  "max_latency_ms": 1078.07,
+  "verdict_stability": {
+    "benchmarks/seeded/vulnerable/negative_withdrawal.py": true,
+    "benchmarks/seeded/safe/saturating_withdrawal.py": true,
+    "benchmarks/seeded/drift/uniqueness_probe.py": true
+  },
+  "all_stable": true,
+  "error_or_unverified_count": 0
+}

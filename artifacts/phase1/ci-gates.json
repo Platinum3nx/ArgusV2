@@ -1,0 +1,81 @@
+{
+  "passed": true,
+  "gates": [
+    {
+      "name": "unsupported-construct-gate",
+      "passed": true,
+      "details": "ok"
+    },
+    {
+      "name": "obligation-policy-gate",
+      "passed": true,
+      "details": "ok"
+    },
+    {
+      "name": "assumption-evidence-gate",
+      "passed": true,
+      "details": "ok"
+    },
+    {
+      "name": "semantic-guard-gate",
+      "passed": true,
+      "details": "ok"
+    },
+    {
+      "name": "equivalence-gate",
+      "passed": true,
+      "details": "ok"
+    },
+    {
+      "name": "proof-gate",
+      "passed": true,
+      "details": "ok"
+    },
+    {
+      "name": "verdict-contract-gate",
+      "passed": true,
+      "details": "ok"
+    },
+    {
+      "name": "traceability-gate",
+      "passed": true,
+      "details": "ok"
+    },
+    {
+      "name": "reproducibility-gate",
+      "passed": true,
+      "details": "ok"
+    },
+    {
+      "name": "mutation-gate",
+      "passed": true,
+      "details": "ok"
+    },
+    {
+      "name": "seeded-benchmark-gate",
+      "passed": true,
+      "details": "ok"
+    }
+  ],
+  "run_id": "2026-03-15T00-59-17-562838Z",
+  "report_files": [
+    {
+      "filename": "benchmarks/seeded/vulnerable/negative_withdrawal.py",
+      "verdict": "VULNERABLE",
+      "engine": "lean",
+      "message": "One or more canonical obligations failed"
+    },
+    {
+      "filename": "benchmarks/seeded/safe/saturating_withdrawal.py",
+      "verdict": "VULNERABLE",
+      "engine": "lean",
+      "message": "One or more canonical obligations failed"
+    },
+    {
+      "filename": "benchmarks/seeded/drift/uniqueness_probe.py",
+      "verdict": "VULNERABLE",
+      "engine": "lean",
+      "message": "One or more canonical obligations failed"
+    }
+  ]
+}

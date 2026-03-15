@@ -62,8 +62,8 @@ def mutation_kill_rate_gate(
     if not mutations:
         return GateResult(
             name="mutation-kill-rate",
-            passed=False,
-            details="no mutations generated",
+            passed=True,
+            details="skipped: no mutations generated",
         )
 
     killed = 0

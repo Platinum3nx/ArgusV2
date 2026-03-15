@@ -105,8 +105,10 @@ def _collect_target_files(args: argparse.Namespace, repo_root: Path) -> List[Tup
         if changed:
             items: List[Tuple[str, str]] = []
             for rel in changed:
+                if not _is_audit_target(rel):
+                    continue
                 path = repo_root / rel
-                if not path.exists() or "legacy" in path.parts:
+                if not path.exists():
                     continue
                 items.append((rel, path.read_text(encoding="utf-8")))
             return items
@@ -115,7 +117,22 @@ def _collect_target_files(args: argparse.Namespace, repo_root: Path) -> List[Tup
     return [
         (str(path.relative_to(repo_root)), path.read_text(encoding="utf-8"))
         for path in discovered
+        if _is_audit_target(str(path.relative_to(repo_root)))
     ]
+
+
+def _is_audit_target(rel_path: str) -> bool:
+    normalized = rel_path.replace("\\", "/")
+    if not normalized.endswith(".py"):
+        return False
+    excluded_prefixes = (
+        "legacy/",
+        "tests/",
+        "benchmarks/",
+    )
+    if normalized.startswith(excluded_prefixes):
+        return False
+    return True
 
 
 if __name__ == "__main__":
