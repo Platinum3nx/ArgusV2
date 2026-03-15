@@ -18,7 +18,7 @@ Phase 1 reliability validation for:
 ## Current hardening outcomes
 1. CI merge-request verification is now blocking (non-optional).
 2. Loop detection in CI gates is AST-based (eliminates false positives/negatives from plain-text matching).
-3. Dafny loop fallback no longer emits synthetic placeholder logic; it fails closed until deterministic lowering exists.
+3. Dafny loop fallback is now deterministic for a supported subset (`for ... in range(...)`, basic `while`), with explicit fail-closed behavior for unsupported loop patterns.
 
 ## Required metrics before Phase 1 sign-off
 - [ ] 20+ repeated controlled runs: success rate and verdict stability.
