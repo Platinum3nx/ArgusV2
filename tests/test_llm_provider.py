@@ -97,3 +97,13 @@ def test_factory_returns_anthropic_client_with_custom_model(monkeypatch) -> None
     client = create_llm_client("anthropic", "claude-opus-4-6")
     assert client.provider_name == "anthropic"
     assert client.model_id == "claude-opus-4-6"
+
+
+def test_factory_returns_gemini_client_with_default_model(monkeypatch) -> None:
+    monkeypatch.setenv("GEMINI_API_KEY", "test-key")
+    google_mod, genai_mod = _fake_genai_module()
+    monkeypatch.setitem(sys.modules, "google", google_mod)
+    monkeypatch.setitem(sys.modules, "google.genai", genai_mod)
+    client = create_llm_client("gemini")
+    assert client.provider_name == "gemini"
+    assert client.model_id == "gemini-2.5-pro"

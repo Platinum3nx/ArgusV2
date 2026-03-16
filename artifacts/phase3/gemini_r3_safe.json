@@ -1,0 +1,52 @@
+{
+  "tool": "ArgusV2",
+  "provider": "gemini",
+  "model": "gemini-2.5-pro",
+  "timestamp": "2026-03-16T00:41:32.810680+00:00",
+  "summary": {
+    "total": 1,
+    "verified": 1,
+    "fixed": 0,
+    "vulnerable": 0,
+    "unverified": 0,
+    "error": 0
+  },
+  "files": [
+    {
+      "filename": "benchmarks/seeded/safe/saturating_withdrawal.py",
+      "verdict": "VERIFIED",
+      "engine": "lean",
+      "message": "All obligations passed",
+      "obligations": [
+        {
+          "id": "withdraw:non_negative_result",
+          "property": "withdraw(...) >= 0",
+          "category": "non_negativity",
+          "description": "Result should remain non-negative under validated inputs",
+          "severity": "critical",
+          "source": "policy"
+        }
+      ],
+      "assumptions": [
+        {
+          "property": "balance >= 0",
+          "description": "The account balance must be non-negative before the withdrawal.",
+          "justification": "Database schema enforces a non-negative check constraint on the accounts.balance column.",
+          "source_type": "db_constraint",
+          "source_ref": "accounts.balance.CHECK",
+          "evidence_id": "EID-DB-BAL-NN",
+          "severity": "critical"
+        },
+        {
+          "property": "amount >= 0",
+          "description": "The withdrawal amount must be a non-negative integer.",
+          "justification": "Input validation layer rejects negative amounts for withdrawal requests.",
+          "source_type": "validator",
+          "source_ref": "WithdrawalRequestValidator",
+          "evidence_id": "EID-VLD-AMT-NN",
+          "severity": "high"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "tool": "ArgusV2",
+  "provider": "gemini",
+  "model": "gemini-2.5-pro",
+  "timestamp": "2026-03-16T00:26:14.293155+00:00",
+  "summary": {
+    "total": 1,
+    "verified": 0,
+    "fixed": 0,
+    "vulnerable": 1,
+    "unverified": 0,
+    "error": 0
+  },
+  "files": [
+    {
+      "filename": "benchmarks/seeded/drift/uniqueness_probe.py",
+      "verdict": "VULNERABLE",
+      "engine": "lean",
+      "message": "One or more canonical obligations failed",
+      "obligations": [
+        {
+          "id": "append_unique:preserve_uniqueness",
+          "property": "Collection updates preserve uniqueness where required",
+          "category": "uniqueness",
+          "description": "List/set update patterns should avoid duplicate insertion",
+          "severity": "high",
+          "source": "policy"
+        }
+      ],
+      "assumptions": [
+        {
+          "property": "len(set(items)) == len(items)",
+          "description": "The input list of items is assumed to contain unique elements.",
+          "justification": "The function's name 'append_unique' implies a contract that it operates on a set of unique items. This is the required pre-condition to ensure the post-condition of uniqueness can be met.",
+          "source_type": "policy",
+          "source_ref": "Policy.UniqueCollections.v1",
+          "evidence_id": "EID-POL-UC1",
+          "severity": "high"
+        }
+      ]
+    }
+  ]
+}

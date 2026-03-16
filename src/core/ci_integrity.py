@@ -339,7 +339,7 @@ def _seeded_benchmark_gate(
             report = report_by_file.get(report_key)
             if report is None:
                 failures.append(f"{rel_path}:no_pipeline_report_for_verdict_check")
-            elif report.verdict.value != expected_verdict:
+            elif not _verdict_satisfies_expected(report.verdict.value, expected_verdict):
                 failures.append(
                     f"{rel_path}:verdict_mismatch:expected={expected_verdict}:got={report.verdict.value}"
                 )
@@ -349,6 +349,19 @@ def _seeded_benchmark_gate(
         passed=not failures,
         details="ok" if not failures else "; ".join(sorted(failures)),
     )
+
+
+def _verdict_satisfies_expected(actual: str, expected: str) -> bool:
+    """Return True if the pipeline verdict satisfies the benchmark expectation.
+
+    FIXED satisfies VULNERABLE because both indicate a security issue was found;
+    the difference is only whether the repair engine succeeded afterward.
+    """
+    if actual == expected:
+        return True
+    if expected == "VULNERABLE" and actual == "FIXED":
+        return True
+    return False
 
 
 def _evaluate_mutation(code: str) -> Verdict:

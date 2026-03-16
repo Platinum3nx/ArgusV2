@@ -53,14 +53,12 @@ class GeminiClient(LLMClient):
     def __init__(self, api_key: str, model: str) -> None:
         from google import genai as _genai  # validated present by factory
 
-        self._genai = _genai
-        self._api_key = api_key
+        self._client = _genai.Client(api_key=api_key)
         self.provider_name = "gemini"
         self.model_id = model
 
     def generate(self, contents: str) -> str:
-        client = self._genai.Client(api_key=self._api_key)
-        response = client.models.generate_content(model=self.model_id, contents=contents)
+        response = self._client.models.generate_content(model=self.model_id, contents=contents)
         return (response.text or "").strip()
 
 

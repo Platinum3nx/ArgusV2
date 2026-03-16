@@ -456,6 +456,8 @@ class ArgusPipeline:
         summary = {
             "run_id": run_id,
             "completed_at": datetime.now(timezone.utc).isoformat(),
+            "provider": self.llm_client.provider_name,
+            "model": self.llm_client.model_id,
             "summary": {
                 "total": len(results),
                 "verified": sum(1 for item in results if item.verdict == Verdict.VERIFIED),

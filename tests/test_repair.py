@@ -12,8 +12,24 @@ class _FakeLLMClient(LLMClient):
         return "def withdraw(balance, amount):\n    return balance"
 
 
-def test_repair_engine_generates_fix() -> None:
-    obligations = [
+class _EmptyLLMClient(LLMClient):
+    provider_name = "fake"
+    model_id = "fake-model"
+
+    def generate(self, contents: str) -> str:
+        return ""
+
+
+class _ExceptionLLMClient(LLMClient):
+    provider_name = "fake"
+    model_id = "fake-model"
+
+    def generate(self, contents: str) -> str:
+        raise RuntimeError("API timeout")
+
+
+def _obligations() -> list:
+    return [
         Obligation(
             id="withdraw:non_negative_result",
             property="withdraw(...) >= 0",
@@ -21,10 +37,33 @@ def test_repair_engine_generates_fix() -> None:
             description="non-negative",
         )
     ]
+
+
+def test_repair_engine_generates_fix() -> None:
     result = RepairEngine(llm_client=_FakeLLMClient(), max_attempts=1).repair(
         python_code="def withdraw(balance, amount): return balance - amount",
         error_message="proof failed",
-        obligations=obligations,
+        obligations=_obligations(),
     )
     assert result.success
     assert "return balance" in (result.fixed_code or "")
+
+
+def test_repair_engine_empty_response_returns_no_fix() -> None:
+    result = RepairEngine(llm_client=_EmptyLLMClient(), max_attempts=1).repair(
+        python_code="def withdraw(balance, amount): return balance - amount",
+        error_message="proof failed",
+        obligations=_obligations(),
+    )
+    assert not result.success
+    assert result.fixed_code is None
+
+
+def test_repair_engine_exception_propagation_returns_no_fix() -> None:
+    result = RepairEngine(llm_client=_ExceptionLLMClient(), max_attempts=1).repair(
+        python_code="def withdraw(balance, amount): return balance - amount",
+        error_message="proof failed",
+        obligations=_obligations(),
+    )
+    assert not result.success
+    assert result.fixed_code is None

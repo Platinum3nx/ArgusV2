@@ -1,0 +1,160 @@
+{
+  "tool": "ArgusV2",
+  "provider": "gemini",
+  "model": "gemini-2.5-pro",
+  "timestamp": "2026-03-15T23:54:32.000511+00:00",
+  "summary": {
+    "total": 3,
+    "verified": 0,
+    "fixed": 0,
+    "vulnerable": 0,
+    "unverified": 3,
+    "error": 0
+  },
+  "files": [
+    {
+      "filename": "safe/saturating_withdrawal.py",
+      "verdict": "UNVERIFIED",
+      "engine": "lean",
+      "message": "Assumption evidence validation failed",
+      "obligations": [
+        {
+          "id": "withdraw:non_negative_result",
+          "property": "withdraw(...) >= 0",
+          "category": "non_negativity",
+          "description": "Result should remain non-negative under validated inputs",
+          "severity": "critical",
+          "source": "policy"
+        }
+      ],
+      "assumptions": [
+        {
+          "property": "",
+          "description": "The withdrawal amount must be a non-negative value, as implied by the term 'withdraw'.",
+          "justification": "",
+          "source_type": "code_context",
+          "source_ref": "function_name",
+          "evidence_id": "withdraw",
+          "severity": "medium"
+        },
+        {
+          "property": "",
+          "description": "The account balance must be a non-negative value.",
+          "justification": "",
+          "source_type": "code_context",
+          "source_ref": "variable_name",
+          "evidence_id": "balance",
+          "severity": "medium"
+        },
+        {
+          "property": "balance >= 0",
+          "description": "Parameter 'balance' is non-negative (domain precondition)",
+          "justification": "Derived deterministically from non_negativity obligation on function parameters",
+          "source_type": "policy",
+          "source_ref": "obligation_policy:derive_preconditions",
+          "evidence_id": "precond:withdraw:balance:non_negative",
+          "severity": "high"
+        },
+        {
+          "property": "amount >= 0",
+          "description": "Parameter 'amount' is non-negative (domain precondition)",
+          "justification": "Derived deterministically from non_negativity obligation on function parameters",
+          "source_type": "policy",
+          "source_ref": "obligation_policy:derive_preconditions",
+          "evidence_id": "precond:withdraw:amount:non_negative",
+          "severity": "high"
+        }
+      ]
+    },
+    {
+      "filename": "vulnerable/negative_withdrawal.py",
+      "verdict": "UNVERIFIED",
+      "engine": "lean",
+      "message": "Assumption evidence validation failed",
+      "obligations": [
+        {
+          "id": "withdraw:non_negative_result",
+          "property": "withdraw(...) >= 0",
+          "category": "non_negativity",
+          "description": "Result should remain non-negative under validated inputs",
+          "severity": "critical",
+          "source": "policy"
+        }
+      ],
+      "assumptions": [
+        {
+          "property": "is_integer(balance)",
+          "description": "The 'balance' parameter is an integer, as specified by its type hint.",
+          "justification": "",
+          "source_type": "code",
+          "source_ref": "def withdraw(balance: int, amount: int) -> int:",
+          "evidence_id": "L1",
+          "severity": "medium"
+        },
+        {
+          "property": "is_integer(amount)",
+          "description": "The 'amount' parameter is an integer, as specified by its type hint.",
+          "justification": "",
+          "source_type": "code",
+          "source_ref": "def withdraw(balance: int, amount: int) -> int:",
+          "evidence_id": "L1",
+          "severity": "medium"
+        },
+        {
+          "property": "balance >= 0",
+          "description": "Parameter 'balance' is non-negative (domain precondition)",
+          "justification": "Derived deterministically from non_negativity obligation on function parameters",
+          "source_type": "policy",
+          "source_ref": "obligation_policy:derive_preconditions",
+          "evidence_id": "precond:withdraw:balance:non_negative",
+          "severity": "high"
+        },
+        {
+          "property": "amount >= 0",
+          "description": "Parameter 'amount' is non-negative (domain precondition)",
+          "justification": "Derived deterministically from non_negativity obligation on function parameters",
+          "source_type": "policy",
+          "source_ref": "obligation_policy:derive_preconditions",
+          "evidence_id": "precond:withdraw:amount:non_negative",
+          "severity": "high"
+        }
+      ]
+    },
+    {
+      "filename": "drift/uniqueness_probe.py",
+      "verdict": "UNVERIFIED",
+      "engine": "lean",
+      "message": "Assumption evidence validation failed",
+      "obligations": [
+        {
+          "id": "append_unique:preserve_uniqueness",
+          "property": "Collection updates preserve uniqueness where required",
+          "category": "uniqueness",
+          "description": "List/set update patterns should avoid duplicate insertion",
+          "severity": "high",
+          "source": "policy"
+        }
+      ],
+      "assumptions": [
+        {
+          "property": "",
+          "description": "",
+          "justification": "",
+          "source_type": "python_type_hint",
+          "source_ref": "items: list[int]",
+          "evidence_id": "L1-C21",
+          "severity": "medium"
+        },
+        {
+          "property": "",
+          "description": "",
+          "justification": "",
+          "source_type": "python_type_hint",
+          "source_ref": "value: int",
+          "evidence_id": "L1-C39",
+          "severity": "medium"
+        }
+      ]
+    }
+  ]
+}

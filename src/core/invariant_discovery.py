@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Optional
 
-from .assumption_evidence import validate_assumptions
+from .assumption_evidence import ALLOWED_SOURCE_TYPES, validate_assumptions
 from .llm_provider import LLMClient
 from .models import AssumedInput, Obligation, Severity
 from .obligation_policy import ObligationPolicy
@@ -79,12 +79,28 @@ class InvariantDiscovery:
         for item in payload.get("assumed_inputs", []):
             if not isinstance(item, dict):
                 continue
+            prop = str(item.get("property", "")).strip()
+            if not prop:
+                # Drop LLM assumptions with empty property — they can't
+                # contribute to formal verification and fail evidence validation.
+                continue
+            source_type = str(item.get("source_type", "")).strip()
+            if source_type not in ALLOWED_SOURCE_TYPES:
+                # Drop assumptions whose source_type the evidence validator
+                # would reject. Deterministic preconditions are always valid.
+                continue
+            if _is_inter_parameter_constraint(prop):
+                # Drop constraints that compare two named variables (e.g. "balance >= amount").
+                # Such guards must exist in the code to be sound. If they are missing the
+                # code is VULNERABLE. Accepting them as LLM assumptions would cause false
+                # VERIFIED verdicts — the exact opposite of fail-closed.
+                continue
             assumptions.append(
                 AssumedInput(
-                    property=str(item.get("property", "")).strip(),
+                    property=prop,
                     description=str(item.get("description", "")).strip(),
                     justification=str(item.get("justification", "")).strip(),
-                    source_type=str(item.get("source_type", "")).strip() or "policy",
+                    source_type=source_type,
                     source_ref=str(item.get("source_ref", "")).strip(),
                     evidence_id=str(item.get("evidence_id", "")).strip(),
                     severity=Severity(str(item.get("severity", "medium")).lower())
@@ -93,6 +109,23 @@ class InvariantDiscovery:
                 )
             )
         return assumptions
+
+
+def _is_inter_parameter_constraint(prop: str) -> bool:
+    """Return True if the property compares two named variables.
+
+    Constraints such as "balance >= amount" represent business-logic guards that
+    MUST exist in the code to be meaningful.  Accepting them as LLM assumptions
+    would allow a hallucinated guard to make a vulnerable function appear verified.
+    Properties comparing a variable to a constant ("amount >= 0") are fine.
+    """
+    pattern = re.compile(r"\b([A-Za-z_]\w*)\s*(?:>=|<=|>|<|==|!=)\s*([A-Za-z_]\w*)\b")
+    match = pattern.search(prop)
+    if not match:
+        return False
+    lhs, rhs = match.group(1), match.group(2)
+    _SAFE_LITERALS = {"True", "False", "None"}
+    return lhs not in _SAFE_LITERALS and rhs not in _SAFE_LITERALS
 
 
 def _extract_json(text: str) -> dict:

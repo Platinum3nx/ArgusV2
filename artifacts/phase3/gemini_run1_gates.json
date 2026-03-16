@@ -1,0 +1,60 @@
+{
+  "passed": false,
+  "gates": [
+    {
+      "name": "unsupported-construct-gate",
+      "passed": true,
+      "details": "ok"
+    },
+    {
+      "name": "obligation-policy-gate",
+      "passed": true,
+      "details": "ok"
+    },
+    {
+      "name": "assumption-evidence-gate",
+      "passed": false,
+      "details": "drift/uniqueness_probe.py:<empty>:Missing property; <empty>:Missing property; safe/saturating_withdrawal.py:<empty>:Missing property; <empty>:Missing property; vulnerable/negative_withdrawal.py:is_integer(balance):Unsupported source_type 'code'; is_integer(balance):Missing justification; is_integer(amount):Unsupported source_type 'code'; is_integer(amount):Missing justification"
+    },
+    {
+      "name": "semantic-guard-gate",
+      "passed": true,
+      "details": "ok"
+    },
+    {
+      "name": "equivalence-gate",
+      "passed": true,
+      "details": "ok"
+    },
+    {
+      "name": "proof-gate",
+      "passed": false,
+      "details": "drift/uniqueness_probe.py:UNVERIFIED; safe/saturating_withdrawal.py:UNVERIFIED; vulnerable/negative_withdrawal.py:UNVERIFIED"
+    },
+    {
+      "name": "verdict-contract-gate",
+      "passed": true,
+      "details": "ok"
+    },
+    {
+      "name": "traceability-gate",
+      "passed": true,
+      "details": "ok"
+    },
+    {
+      "name": "reproducibility-gate",
+      "passed": true,
+      "details": "ok"
+    },
+    {
+      "name": "mutation-gate",
+      "passed": true,
+      "details": "ok"
+    },
+    {
+      "name": "seeded-benchmark-gate",
+      "passed": false,
+      "details": "benchmarks/seeded/manifest.json missing"
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "tool": "ArgusV2",
+  "provider": "gemini",
+  "model": "gemini-2.5-pro",
+  "timestamp": "2026-03-16T00:12:28.247154+00:00",
+  "summary": {
+    "total": 1,
+    "verified": 0,
+    "fixed": 0,
+    "vulnerable": 1,
+    "unverified": 0,
+    "error": 0
+  },
+  "files": [
+    {
+      "filename": "benchmarks/seeded/drift/uniqueness_probe.py",
+      "verdict": "VULNERABLE",
+      "engine": "lean",
+      "message": "One or more canonical obligations failed",
+      "obligations": [
+        {
+          "id": "append_unique:preserve_uniqueness",
+          "property": "Collection updates preserve uniqueness where required",
+          "category": "uniqueness",
+          "description": "List/set update patterns should avoid duplicate insertion",
+          "severity": "high",
+          "source": "policy"
+        }
+      ],
+      "assumptions": []
+    }
+  ]
+}

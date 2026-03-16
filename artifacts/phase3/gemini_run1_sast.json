@@ -1,0 +1,100 @@
+{
+  "version": "15.0.7",
+  "scan": {
+    "type": "sast",
+    "start_time": "2026-03-15T23:54:32.000660+00:00",
+    "end_time": "2026-03-15T23:54:32.000660+00:00",
+    "status": "success",
+    "analyzer": {
+      "id": "argus-v2",
+      "name": "ArgusV2",
+      "version": "2.0.0",
+      "vendor": {
+        "name": "Argus"
+      }
+    },
+    "scanner": {
+      "id": "argus-v2",
+      "name": "ArgusV2",
+      "version": "2.0.0",
+      "vendor": {
+        "name": "Argus"
+      }
+    }
+  },
+  "vulnerabilities": [
+    {
+      "id": "ab7e1c3c7d5909858c0c373903c741994ee0236715a86a4c836f6b93aaafc8bd",
+      "category": "sast",
+      "name": "Argus UNVERIFIED",
+      "message": "Assumption evidence validation failed",
+      "description": "Assumption evidence validation failed",
+      "severity": "High",
+      "confidence": "High",
+      "scanner": {
+        "id": "argus-v2",
+        "name": "ArgusV2"
+      },
+      "location": {
+        "file": "safe/saturating_withdrawal.py",
+        "start_line": 1
+      },
+      "identifiers": [
+        {
+          "type": "argus_rule",
+          "name": "argus/unverified",
+          "value": "argus/unverified"
+        }
+      ]
+    },
+    {
+      "id": "362f3505448ad0c2982b97b43baa2b2f77f240cb735214eb6bac168dc3ba84e7",
+      "category": "sast",
+      "name": "Argus UNVERIFIED",
+      "message": "Assumption evidence validation failed",
+      "description": "Assumption evidence validation failed",
+      "severity": "High",
+      "confidence": "High",
+      "scanner": {
+        "id": "argus-v2",
+        "name": "ArgusV2"
+      },
+      "location": {
+        "file": "vulnerable/negative_withdrawal.py",
+        "start_line": 1
+      },
+      "identifiers": [
+        {
+          "type": "argus_rule",
+          "name": "argus/unverified",
+          "value": "argus/unverified"
+        }
+      ]
+    },
+    {
+      "id": "5bd2eac547a965f03fc90c89184c248b448e5e7f9f7e4033dc2449a7e3af8760",
+      "category": "sast",
+      "name": "Argus UNVERIFIED",
+      "message": "Assumption evidence validation failed",
+      "description": "Assumption evidence validation failed",
+      "severity": "High",
+      "confidence": "High",
+      "scanner": {
+        "id": "argus-v2",
+        "name": "ArgusV2"
+      },
+      "location": {
+        "file": "drift/uniqueness_probe.py",
+        "start_line": 1
+      },
+      "identifiers": [
+        {
+          "type": "argus_rule",
+          "name": "argus/unverified",
+          "value": "argus/unverified"
+        }
+      ]
+    }
+  ],
+  "remediations": []
+}
