@@ -123,7 +123,7 @@ Stabilize end-to-end autonomous behavior so outcomes are deterministic, fail-clo
 
 ### Phase 3 acceptance criteria status
 
-- [x] `--provider anthropic` with `ANTHROPIC_API_KEY` drives full pipeline (code complete; runtime validation pending key)
+- [x] `--provider anthropic` with `ANTHROPIC_API_KEY` drives full pipeline
 - [x] Default provider is `"anthropic"` everywhere (config, CLI, docs, env var default)
 - [x] `--provider gemini` with `GEMINI_API_KEY` still works (2 backward-compat runs completed)
 - [x] Provider failures fail-closed (`ConfigurationError` at startup)

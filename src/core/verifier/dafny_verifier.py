@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import re
 import subprocess
 import tempfile
 import uuid
@@ -77,4 +78,3 @@ class DafnyVerifier:
             ObligationResult(obligation=item, verified=False, engine="dafny", message=message)
             for item in obligations
         ]
-import re

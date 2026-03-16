@@ -52,7 +52,7 @@
   - [x] Commit + push milestone
 
 ### Milestone 4: Phase 3 GitLab Integration
-- Status: `IN PROGRESS`
+- Status: `COMPLETED (local implementation; GitLab MR E2E + Catalog deploy require live GitLab context)`
 - Objective: Add GitLab platform integration, CI gates runner, and deployable Duo flow configuration.
 - Tasks:
   - [x] Build GitLab adapter (`src/adapters/gitlab_adapter.py`)

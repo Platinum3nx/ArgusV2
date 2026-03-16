@@ -4,7 +4,7 @@ import json
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Optional
+from typing import List
 
 from .assumption_evidence import ALLOWED_SOURCE_TYPES, validate_assumptions
 from .llm_provider import LLMClient
@@ -26,7 +26,7 @@ class DiscoveryResult:
 class InvariantDiscovery:
     def __init__(
         self,
-        llm_client: Optional[LLMClient] = None,
+        llm_client: LLMClient | None = None,
         use_llm: bool = True,
     ) -> None:
         self.llm_client = llm_client

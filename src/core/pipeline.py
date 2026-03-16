@@ -4,7 +4,7 @@ import json
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import List, Optional
+from typing import List
 
 from .assumption_evidence import validate_assumptions
 from .equivalence import run_equivalence_check
@@ -49,7 +49,7 @@ class ArgusPipeline:
     def __init__(
         self,
         config: PipelineConfig | None = None,
-        llm_client: Optional[LLMClient] = None,
+        llm_client: LLMClient | None = None,
     ) -> None:
         self.config = config or PipelineConfig()
 

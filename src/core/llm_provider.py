@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import os
-from typing import Optional
 
 
 class ConfigurationError(Exception):
@@ -62,7 +61,7 @@ class GeminiClient(LLMClient):
         return (response.text or "").strip()
 
 
-def create_llm_client(provider: str, model: Optional[str] = None) -> LLMClient:
+def create_llm_client(provider: str, model: str | None = None) -> LLMClient:
     """
     Factory for LLM provider clients.
 
