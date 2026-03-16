@@ -837,27 +837,638 @@ Prompt data handling for Phase 3 is scoped as follows:
 
 ## Phase 4 — UX, Frontend, and Demo Polish
 ### Goal
-Make Argus instantly understandable and impressive to both technical and non-technical judges.
+Make Argus instantly understandable and impressive to both technical and non-technical judges. Build a visual layer that communicates the full verification story (trigger → discover → verify → repair → prove → enforce) in under 45 seconds. Upgrade MR comments from functional tables into actionable developer summaries. Lock a 3-minute demo script that is rehearsable, deterministic, and narrative-tight.
 
-### Scope
-- Mission Control UI or equivalent polished visual layer
-- High-signal MR summary templates
-- 3-minute narrative-tight demo script and assets
+### Why this phase matters
+Phases 1-3 built a technically rigorous product — deterministic verification, fail-closed verdicts, provider-traced artifacts, and end-to-end Anthropic integration. But hackathon judges allocate **at most 3 minutes** to each submission. If they can't instantly grasp what Argus does, why it matters, and see it working, the technical depth is invisible. Phase 4 converts engineering quality into perceived quality. It is also the transition point from "hackathon project" to "startup-grade product" — enterprise buyers and pilot customers evaluate tools on developer experience and visual clarity, not just correctness.
 
-### Deliverables
-- UI demo surface
-- Final MR/report templates
-- Finalized demo script + backup assets
+Additionally, the judging rubric explicitly scores **"Design & Usability"** as one of four categories. Phase 4 directly targets this rubric dimension while reinforcing the others (demo script reinforces "Technological Implementation" and "Potential Impact"; Mission Control reinforces "Quality of Idea").
+
+### Current state (entering Phase 4)
+| Component | Status | Gap |
+|---|---|---|
+| MR comment template (`render_mr_comment`) | Working | Minimal — table of files + verdicts + provider footer. No executive summary, no developer action items, no before/after diffs, no obligation detail. |
+| Markdown report (`render_markdown_report`) | Working | Lists files with verdicts and obligations. No executive summary, no risk assessment, no recommendation section. |
+| JSON report (`render_json_report`) | Working | Machine-readable, complete. Used as data source for dashboard. |
+| SARIF report (`render_sarif_report`) | Working | Standard SARIF 2.1.0 for GitLab Security Dashboard integration. |
+| GitLab SAST report (`render_gitlab_sast_report`) | Working | Standard GitLab SAST format. Adequate. |
+| Legacy frontend | Exists (`legacy/frontend/`) | Next.js 16 + React 19 + Tailwind 4 + Framer Motion. Has components (FileResultCard, ProofViewer, StatusBanner, ThinkingProcess). But: calls non-existent streaming API endpoints (`/audit`, `/audit_repo`), references Gemini, uses old schema (verified/failed/patched), not integrated with current pipeline. |
+| Mission Control / HTML dashboard | Missing | No standalone visual dashboard exists. |
+| Demo script | Missing | Section 9 of this doc has a rough outline but no timestamped script, narration text, or screen-by-screen breakdown. |
+| Demo target scenarios | Missing | `demo_target/` directory is empty. Benchmark scenarios exist in `benchmarks/seeded/` but no demo-specific scenarios with narrative context. |
+| Architecture diagram | Missing | No visual architecture diagram for demo/docs. |
+| CLI dashboard output | Not implemented | CLI produces JSON/Markdown/SARIF/SAST but no HTML dashboard artifact. |
+
+### Strategy
+**Artifact-first dashboard, enhanced reporter, locked demo.** Three parallel tracks:
+
+1. **Mission Control Dashboard** — Build a self-contained HTML report generator (`src/core/dashboard.py`) that reads pipeline trace artifacts and produces a single `argus_dashboard.html` file. No server required — the HTML file is a CI artifact that judges can open in any browser. This avoids the complexity of maintaining a separate frontend server while delivering full visual impact. The dashboard must be impressive enough for demo video screenshots and clear enough for non-technical comprehension.
+
+2. **Enhanced MR/Report Templates** — Upgrade `render_mr_comment` to include executive summary, developer action items, obligation details, and before/after code diffs for FIXED files. Upgrade `render_markdown_report` with executive summary and risk assessment. Keep changes backward-compatible with existing GitLab adapter.
+
+3. **Demo Engineering** — Create a precise 3-minute demo script with timestamped beats, narration text, and screen content. Prepare deterministic demo scenarios in `demo_target/` with clear narrative context. Pre-generate backup artifacts for offline fallback.
+
+### Architecture principle
+```
+Pipeline run → Trace artifacts (JSON)
+                     ↓
+              Dashboard generator
+                     ↓
+         argus_dashboard.html (self-contained)
+              - Embedded CSS/JS
+              - No external dependencies
+              - Reads from argus_report.json + trace manifests
+              - Verdict timeline + per-file cards + code diffs
+```
+
+The dashboard is generated **after** the pipeline run, not during it. It reads the same artifacts that CI integrity gates validate, ensuring what the judge sees is what the pipeline actually produced. No separate data path, no demo-only shortcuts.
+
+### Execution steps (ordered)
+
+#### Step 4.1 — Mission Control HTML Dashboard Generator
+**New file**: `src/core/dashboard.py`
+
+Build a Python module that generates a self-contained HTML dashboard from pipeline output artifacts. The dashboard is a single `.html` file with embedded CSS and JavaScript — no external CDN links, no server, no build step. Judges open it in a browser and instantly understand what Argus did.
+
+**Input data sources:**
+- `argus_report.json` — summary + per-file verdicts, obligations, assumptions
+- `.argus-trace/<run>/manifest.json` — run metadata (provider, model, config)
+- `.argus-trace/<run>/summary.json` — aggregated results
+- `.argus-trace/<run>/files/<filename>/result.json` — per-file details
+- `.argus-trace/<run>/files/<filename>/02_translation.lean` — Lean 4 proof code (when available)
+- `.argus-trace/<run>/files/<filename>/04_repair_0.py` — repaired Python code (when available)
+
+**Dashboard sections (top to bottom):**
+
+1. **Header bar** — "Argus Mission Control" branding, run timestamp, provider badge (Anthropic Claude / Gemini), overall verdict status indicator (green/yellow/red).
+
+2. **Executive summary panel** — One-sentence outcome: "Argus audited N files. M verified, K repaired, J require attention." Risk level badge (CLEAR / ATTENTION / CRITICAL). This is the "45-second comprehension" target.
+
+3. **Pipeline timeline** — Horizontal stage visualization showing: Trigger → Discover → Translate → Verify → [Proof Search] → [Repair] → [Re-verify] → Enforce. Each stage shows status (completed/skipped/failed) and timing if available. This communicates the autonomous multi-stage flow at a glance.
+
+4. **Per-file verdict cards** — Expandable cards for each audited file:
+   - File name + verdict badge (VERIFIED green, FIXED yellow, VULNERABLE red, UNVERIFIED orange, ERROR gray)
+   - Obligation list with pass/fail indicators
+   - Assumption list with source attribution
+   - Engine used (Lean 4 / Dafny)
+   - Message / finding description
+   - **Code panel** (expandable): Side-by-side original Python + Lean 4 proof / repaired code
+
+5. **Audit trail panel** — Provider attribution, trace directory path, artifact checksums, run configuration. This proves the dashboard represents a real run, not a mock.
+
+6. **Footer** — "Generated by ArgusV2 — Autonomous DevSecOps Agent" + version + timestamp.
+
+**Visual design principles:**
+- Dark theme (matches the legacy frontend aesthetic, looks professional on video)
+- Color coding: green (#10B981) for VERIFIED, amber (#F59E0B) for FIXED, red (#EF4444) for VULNERABLE, orange (#F97316) for UNVERIFIED, gray (#6B7280) for ERROR
+- Monospace font for code blocks, sans-serif for text
+- Smooth CSS transitions for expandable sections (no JS framework required — use `<details>`/`<summary>` with CSS or minimal vanilla JS)
+- Responsive layout (works in demo video and on judge's laptop)
+
+**Implementation approach:**
+```python
+def generate_dashboard(
+    report_path: str,           # Path to argus_report.json
+    trace_root: str = ".argus-trace",
+    run_id: str | None = None,  # Auto-detect latest if None
+    output_path: str = "argus_dashboard.html",
+) -> str:
+    """Generate self-contained HTML dashboard. Returns output path."""
+```
+
+The function:
+1. Reads `argus_report.json` and trace artifacts
+2. Collects Lean 4 proof code and repaired Python code from trace files
+3. Renders all data into a single HTML template with inline CSS and JS
+4. Writes to `output_path`
+
+HTML template structure:
+- All CSS is in a `<style>` block (no external stylesheets)
+- All JS is in a `<script>` block (vanilla JS, no frameworks)
+- Data is embedded as a `<script type="application/json" id="argus-data">` block
+- JS reads the embedded data and renders the interactive elements
+- Total file size target: < 200KB (text-heavy, no images)
+
+**Acceptance**: `generate_dashboard("argus_report.json")` produces a valid HTML file that opens in Chrome/Firefox/Safari, displays all verdict information, and communicates the Argus value proposition to a non-technical viewer within 45 seconds. No external dependencies or network requests.
+
+#### Step 4.2 — Enhanced MR Comment Template
+**File**: `src/core/reporter.py` (modify `render_mr_comment`)
+
+Transform the MR comment from a minimal table into a high-signal developer summary. The comment is the primary interface between Argus and the developer — it must be immediately actionable.
+
+**Current format:**
+```markdown
+## Argus Formal Verification Report
+
+**Files Audited**: 3 | Verified: 1 | Fixed: 1 | Vulnerable: 1 | Unverified/Error: 0
+
+| File | Verdict | Finding |
+|:---|:---|:---|
+| `safe.py` | VERIFIED | n/a |
+| `vuln.py` | FIXED | Repaired and verified |
+| `drift.py` | VULNERABLE | Obligation failed: non_negative_result |
+
+**Reasoning Provider**: Anthropic claude-sonnet-4-6 | **Verification Engine**: Lean 4 / Dafny
+```
+
+**New format:**
+```markdown
+## Argus Formal Verification Report
+
+### Executive Summary
+Argus audited **3 files** in this merge request. **1 vulnerability was detected and automatically repaired**. 1 file requires developer attention.
+
+| Status | Count |
+|:---|:---|
+| Verified (safe to merge) | 1 |
+| Fixed (auto-repaired, verified) | 1 |
+| Vulnerable (action required) | 1 |
+
+---
+
+### Action Required
+
+**`drift.py`** — VULNERABLE
+> **What failed**: Obligation `non_negative_result` — the function can return a negative value when `amount > balance`.
+> **What this means**: An attacker could trigger a negative balance, leading to unauthorized fund creation.
+> **What to do**: Add a bounds check before the subtraction, or clamp the result to zero.
+
+<details>
+<summary>Obligation details (1 failed)</summary>
+
+| Obligation | Status | Description |
+|:---|:---|:---|
+| `non_negative_result` | FAILED | Function result must be >= 0 |
+
+</details>
+
+---
+
+### Auto-Repaired
+
+**`vuln.py`** — FIXED
+> Argus detected a missing bounds check and generated a verified repair.
+
+<details>
+<summary>View repair diff</summary>
+
+```diff
+- def withdraw(balance: int, amount: int) -> int:
+-     return balance - amount
++ def withdraw(balance: int, amount: int) -> int:
++     if amount > balance:
++         return balance
++     return balance - amount
+```
+
+</details>
+
+---
+
+### Verified
+
+**`safe.py`** — VERIFIED
+> All 2 obligations passed formal verification.
+
+---
+
+**Reasoning**: Anthropic Claude Sonnet 4.6 | **Verification**: Lean 4 / Dafny | **Trace**: `.argus-trace/<run_id>`
+```
+
+**Key changes to `render_mr_comment`:**
+1. Add executive summary paragraph with counts and one-line outcome
+2. Group files by verdict category (Action Required → Auto-Repaired → Verified) instead of flat table
+3. For VULNERABLE files: explain what failed, what it means, and what to do
+4. For FIXED files: show the repair diff in a collapsible `<details>` block
+5. For VERIFIED files: confirm obligation count and engine
+6. Use collapsible `<details>` blocks for obligation details (keeps comment scannable)
+7. Preserve provider attribution footer
+
+**Function signature change:**
+```python
+def render_mr_comment(
+    files: List[FileReport],
+    provider: str = "",
+    model: str = "",
+    repaired_code: Dict[str, str] | None = None,  # NEW: filename → repaired code
+    original_code: Dict[str, str] | None = None,   # NEW: filename → original code
+) -> str:
+```
+
+The `repaired_code` and `original_code` dicts are optional — when provided, the comment includes repair diffs. When not provided (backward-compatible), the comment omits diffs.
+
+**Acceptance**: MR comment includes executive summary, grouped verdict sections, actionable developer guidance for VULNERABLE files, and repair diffs for FIXED files. Comment renders correctly in GitLab Flavored Markdown. Total comment length stays under 65,535 characters (GitLab note body limit).
+
+#### Step 4.3 — Enhanced Markdown Audit Report
+**File**: `src/core/reporter.py` (modify `render_markdown_report`)
+
+Upgrade the standalone Markdown report (`Argus_Audit_Report.md`) from a flat table to a structured audit document suitable for compliance review and demo screenshots.
+
+**New structure:**
+1. **Title + metadata** — Report title, timestamp, provider, run ID
+2. **Executive summary** — One-paragraph outcome with risk level
+3. **Verdict summary table** — Same as current, but with color-coded status column
+4. **Per-file detailed analysis** — For each file:
+   - Verdict badge + engine + message
+   - Obligations table with pass/fail per obligation
+   - Assumptions list with source attribution and evidence IDs
+   - For FIXED files: original vs repaired code blocks
+5. **Risk assessment** — Aggregate risk level based on verdict distribution and obligation severity
+6. **Recommendations** — Actionable next steps grouped by priority
+7. **Audit metadata** — Provider, model, trace path, artifact hashes
+
+**Function signature change:**
+```python
+def render_markdown_report(
+    files: List[FileReport],
+    provider: str = "",
+    model: str = "",
+    repaired_code: Dict[str, str] | None = None,
+    original_code: Dict[str, str] | None = None,
+) -> str:
+```
+
+**Acceptance**: Report is a valid Markdown document that renders cleanly in GitLab/GitHub preview. Contains executive summary, risk assessment, and actionable recommendations.
+
+#### Step 4.4 — Pipeline integration for enhanced reports
+**Files**: `src/core/pipeline.py` (modify `run_many`), `src/adapters/cli.py` (modify `main`)
+
+Wire the enhanced reporter functions and dashboard generator into the existing pipeline flow.
+
+**Pipeline changes (`run_many`):**
+Currently `run_many` returns `List[FileReport]`. It needs to additionally track original and repaired code so reporters can generate diffs:
+
+```python
+@dataclass
+class BatchResult:
+    reports: List[FileReport]
+    original_code: Dict[str, str]      # filename → original Python
+    repaired_code: Dict[str, str]      # filename → repaired Python (FIXED only)
+```
+
+Change `run_many` to return `BatchResult` (or add code tracking attributes). This keeps the data flow clean — the pipeline already has this information in `PipelineResult.repaired_code`, it just needs to surface it.
+
+**CLI changes:**
+- Add `--output-html` argument: `type=str, default="argus_dashboard.html"` — path for dashboard output
+- After generating JSON/Markdown/SARIF/SAST, call `generate_dashboard()` with the report JSON and trace root
+- Pass `original_code` and `repaired_code` dicts to `render_mr_comment` and `render_markdown_report`
+- Dashboard generation is non-blocking — if it fails, the pipeline still produces all other artifacts
+
+**GitLab adapter changes (`build_comment`):**
+- Pass `original_code` and `repaired_code` through to `render_mr_comment` so MR comments include diffs
+
+**Acceptance**: Running `python -m src.adapters.cli --mode ci --allow-local-verify` produces all existing artifacts (JSON, Markdown, SARIF, SAST) plus `argus_dashboard.html`. MR comments include enhanced formatting when published to GitLab.
+
+#### Step 4.5 — Demo scenario preparation
+**Directory**: `demo_target/`
+
+Create three demo scenarios that tell a compelling narrative story. These are distinct from the `benchmarks/seeded/` corpus (which is for automated testing). Demo scenarios are designed for human comprehension — they have meaningful variable names, realistic function signatures, and clear security implications.
+
+**Scenario 1: Safe function** (`demo_target/safe_transfer.py`)
+```python
+def transfer(sender_balance: int, amount: int) -> int:
+    """Transfer funds with proper bounds checking."""
+    if amount <= 0:
+        return sender_balance
+    if amount > sender_balance:
+        return sender_balance
+    return sender_balance - amount
+```
+- Expected verdict: VERIFIED
+- Narrative: "This function is already safe. Argus confirms it mathematically."
+
+**Scenario 2: Vulnerable function** (`demo_target/vulnerable_transfer.py`)
+```python
+def transfer(sender_balance: int, amount: int) -> int:
+    """Transfer funds — missing bounds check!"""
+    return sender_balance - amount
+```
+- Expected verdict: FIXED (repair succeeds) or VULNERABLE (if repair fails)
+- Narrative: "A developer pushed this without a bounds check. Argus catches it, explains why, and generates a verified fix."
+
+**Scenario 3: Subtle drift** (`demo_target/drift_withdrawal.py`)
+```python
+def withdraw(balance: int, amount: int) -> int:
+    """Withdraw with fee — subtle overflow risk."""
+    fee = amount // 10
+    return balance - amount - fee
+```
+- Expected verdict: VULNERABLE
+- Narrative: "This function looks safe at first glance, but the fee calculation can cause the result to go negative. Argus catches what code review might miss."
+
+**Pre-generated backup artifacts:**
+For each scenario, run the pipeline once with `--provider anthropic` and archive the output to `demo_target/backup_artifacts/`:
+- `argus_report.json`
+- `argus_dashboard.html`
+- `Argus_Audit_Report.md`
+- `.argus-trace/<run>/` (full trace)
+
+These backup artifacts serve as fallback if the live demo encounters API issues or latency spikes.
+
+**Acceptance**: All three demo scenarios run successfully with `python -m src.adapters.cli --file demo_target/<file>.py --allow-local-verify --provider anthropic`. Verdicts match expected outcomes. Backup artifacts are pre-generated and committed.
+
+#### Step 4.6 — Demo script with precise timestamps
+**New file**: `docs/demo-script.md`
+
+A locked, rehearsable 3-minute script with exact timestamps, narration, and screen content for each beat.
+
+**Script structure:**
+
+```
+## Segment 1: The Problem (0:00 – 0:25)
+### Screen
+- Split view: left = code editor with `vulnerable_transfer.py`, right = terminal
+- Subtitle: "A developer pushes a transfer function without bounds checking"
+
+### Narration
+"Every day, developers push security-critical code changes. Code review catches
+some issues, but subtle logic flaws — like missing bounds checks on financial
+operations — slip through. A single unchecked subtraction can create money from
+nothing. Current tools scan for patterns. Argus proves safety mathematically."
+
+### Key visual
+- Highlight the `return sender_balance - amount` line
+- Show a negative input example: balance=100, amount=200 → result=-100
+
+---
+
+## Segment 2: Trigger (0:25 – 0:50)
+### Screen
+- GitLab MR view showing the vulnerable code pushed as a commit
+- Argus CI job starts automatically
+- Terminal shows: `python -m src.adapters.cli --mode ci --provider anthropic`
+
+### Narration
+"When a merge request is created, Argus triggers automatically. No manual
+action required. The Argus agent discovers security obligations from the code,
+translates them into Lean 4 proof obligations, and runs formal verification."
+
+### Key visual
+- Show the CI pipeline running with stage indicators
+- Show "Argus Scanning..." status
+
+---
+
+## Segment 3: Detection + Diagnosis (0:50 – 1:25)
+### Screen
+- Terminal output showing obligation discovery
+- Lean 4 proof code (from trace artifacts)
+- Verification failure message
+
+### Narration
+"Argus found two obligations: the result must never be negative, and the
+balance must not increase after withdrawal. The Lean 4 prover confirms:
+without a bounds check, the first obligation fails. This isn't a heuristic —
+it's a mathematical proof of the vulnerability."
+
+### Key visual
+- Show the Lean 4 proof with the failing obligation highlighted
+- Show the Argus Dashboard "VULNERABLE" verdict card
+
+---
+
+## Segment 4: Repair + Re-verification (1:25 – 2:05)
+### Screen
+- Argus generates a repair using Claude
+- Side-by-side: original vulnerable code vs. repaired code
+- Re-verification succeeds
+
+### Narration
+"Argus uses Claude to generate a security patch. But it doesn't trust the
+AI — it re-runs formal verification on the repaired code. The Lean 4 prover
+confirms: both obligations now pass. The fix is mathematically proven safe.
+Claude proposes, Lean disposes."
+
+### Key visual
+- Code diff: before (red) / after (green)
+- Dashboard showing FIXED verdict with green checkmark
+- "Claude proposes, Lean disposes" text overlay
+
+---
+
+## Segment 5: Developer & Compliance UX (2:05 – 2:35)
+### Screen
+- GitLab MR with Argus comment posted
+- Mission Control dashboard in browser
+- Downloadable audit artifacts
+
+### Narration
+"The developer sees a structured MR comment: what failed, why it matters,
+and the verified fix. The Mission Control dashboard provides a visual overview
+for security leads. SARIF reports integrate with GitLab's Security Dashboard.
+Every decision is traceable — from obligation discovery through proof to verdict."
+
+### Key visual
+- MR comment with executive summary + repair diff
+- Dashboard with pipeline timeline and verdict cards
+- Artifact download panel
+
+---
+
+## Segment 6: Close (2:35 – 3:00)
+### Screen
+- Architecture diagram overlay
+- Key metrics: "0 false positives across 18+ validation runs"
+- Positioning statement
+
+### Narration
+"ArgusV2 is the trust layer for AI-accelerated software delivery. It
+uses Anthropic Claude for reasoning and Lean 4 for mathematical proof.
+It's autonomous, fail-closed, and enterprise-ready. Safer merges, faster
+reviews, auditable trust."
+
+### Key visual
+- Architecture: LLM (advisor) → Formal Verifier (authority)
+- "AI reasons. Math proves. Argus enforces."
+```
+
+**Backup plan:**
+- If live run fails during recording: cut to pre-generated dashboard/artifacts
+- If API is slow: use pre-recorded terminal output (screen recording of successful run)
+- All backup assets reference the same code and version as the live demo
+
+**Acceptance**: Script is exactly 3 minutes. Each segment has specific screen content, narration text, and key visuals. Script can be rehearsed with a stopwatch and consistently hits time marks.
+
+#### Step 4.7 — Architecture diagram and visual assets
+**New files**: `docs/architecture.md`, `docs/assets/` directory
+
+Create text-based architecture diagrams suitable for:
+- README (text/ASCII)
+- Demo video overlay (rendered from text)
+- Submission page (Devpost screenshot)
+
+**Primary architecture diagram:**
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    GitLab Merge Request                         │
+│                   (Event Trigger Layer)                         │
+└───────────────────────────┬─────────────────────────────────────┘
+                            │ push / MR created
+                            ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    Argus Verified Repair                        │
+│                   (Autonomous Agent)                            │
+│                                                                 │
+│  ┌──────────┐  ┌───────────┐  ┌──────────┐  ┌──────────────┐  │
+│  │ Discover │→ │ Translate │→ │  Verify  │→ │   Enforce    │  │
+│  │          │  │           │  │          │  │              │  │
+│  │Obligations│ │Python→Lean│  │Lean 4 /  │  │ MR Comment   │  │
+│  │& Inputs  │  │  / Dafny  │  │  Dafny   │  │ Labels       │  │
+│  └──────────┘  └───────────┘  └────┬─────┘  │ Merge Gate   │  │
+│                                    │         └──────────────┘  │
+│                              ┌─────┴──────┐                    │
+│                              │ Proof Fail? │                    │
+│                              └─────┬──────┘                    │
+│                         ┌──────────┼──────────┐                │
+│                         ▼                     ▼                │
+│                  ┌─────────────┐     ┌──────────────┐          │
+│                  │Proof Search │     │Secure Repair │          │
+│                  │(Claude)     │     │(Claude)      │          │
+│                  └──────┬──────┘     └──────┬───────┘          │
+│                         │                   │                  │
+│                         └───────┬───────────┘                  │
+│                                 ▼                              │
+│                        ┌────────────────┐                      │
+│                        │ Re-Verify      │                      │
+│                        │ (Lean 4/Dafny) │                      │
+│                        └────────────────┘                      │
+│                                                                 │
+│    ┌─────────────────────────────────────────────────────┐     │
+│    │ TRUST MODEL: Claude = ADVISOR | Lean 4 = AUTHORITY  │     │
+│    │ LLM proposes. Formal verifier decides. Always.      │     │
+│    └─────────────────────────────────────────────────────┘     │
+└─────────────────────────────────────────────────────────────────┘
+                            │
+                            ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                     Output Artifacts                            │
+│  ┌─────────┐ ┌──────────┐ ┌──────┐ ┌──────┐ ┌─────────────┐  │
+│  │Dashboard│ │MR Comment│ │ JSON │ │SARIF │ │ Audit Trail │  │
+│  │ (HTML)  │ │(GitLab)  │ │Report│ │Report│ │  (Traces)   │  │
+│  └─────────┘ └──────────┘ └──────┘ └──────┘ └─────────────┘  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**Impact diagram (for demo close / submission):**
+```
+Without Argus                    With Argus
+─────────────                    ──────────
+Developer pushes code     →     Developer pushes code
+Code review (manual)      →     Argus auto-verifies
+Reviewer misses bug       →     Bug caught by proof
+Bug reaches production    →     Fix generated + proven
+Incident + rollback       →     Safe merge + audit trail
+Hours/days of toil        →     Minutes, autonomous
+```
+
+**Acceptance**: Architecture diagram is committed to `docs/architecture.md`. Diagram accurately reflects the current pipeline stages and trust model. Can be copy-pasted into README and demo slides.
+
+#### Step 4.8 — Tests for new dashboard and reporter functionality
+**Files**: `tests/test_dashboard.py` (new), modify `tests/test_reporter.py`
+
+**Dashboard tests (`test_dashboard.py`):**
+- `test_generate_dashboard_produces_html` — Given a valid `argus_report.json`, generates HTML containing expected sections (header, summary, verdict cards)
+- `test_dashboard_embeds_data` — Output HTML contains `<script type="application/json" id="argus-data">` with report data
+- `test_dashboard_no_external_deps` — Output HTML contains no `<link>`, `<script src=`, or `fetch()` calls to external URLs
+- `test_dashboard_handles_empty_report` — Empty file list produces a valid dashboard with "No files audited" message
+- `test_dashboard_handles_all_verdicts` — Report with all 5 verdict types renders correctly
+
+**Enhanced reporter tests:**
+- `test_mr_comment_has_executive_summary` — Output contains "Executive Summary" and file count
+- `test_mr_comment_groups_by_verdict` — VULNERABLE files appear under "Action Required", FIXED under "Auto-Repaired", VERIFIED under "Verified"
+- `test_mr_comment_includes_repair_diff` — When `repaired_code` is provided for a FIXED file, output contains diff markers
+- `test_mr_comment_backward_compatible` — Calling without `repaired_code`/`original_code` still produces valid comment (no crash)
+- `test_markdown_report_has_risk_assessment` — Output contains "Risk Assessment" section
+
+**Acceptance**: All new tests pass. Existing tests continue to pass (backward compatibility). Test coverage for reporter and dashboard modules is comprehensive.
+
+#### Step 4.9 — README submission rewrite
+**File**: `README.md`
+
+Rewrite the README to be submission-grade. The README is the first thing judges see — it must communicate value, demonstrate the product, and guide them to evidence.
+
+**Structure:**
+1. **Hero line**: "ArgusV2 — The Trust Layer for AI-Accelerated Software Delivery"
+2. **One-paragraph pitch**: What it does, why it matters, how it works (3 sentences max)
+3. **Screenshot/GIF**: Mission Control dashboard screenshot (or pipeline output example)
+4. **How it works**: 4-step explanation with architecture diagram
+5. **Custom Public Agent & Flow**: (existing Phase 2 section — keep/update)
+6. **Quick Start**: 3-step guide to see Argus in action
+7. **Demo Video**: Link to video (placeholder until Phase 5)
+8. **Anthropic Integration**: How Claude powers reasoning while Lean 4 proves safety
+9. **Output Artifacts**: Table of all outputs (dashboard, MR comment, SARIF, JSON, traces)
+10. **Project Structure**: Brief directory overview
+11. **License**: CC0
+
+**Acceptance**: A judge reading only the README can understand what Argus does, how it works, and how to try it — in under 2 minutes. README includes at least one visual (screenshot or architecture diagram).
+
+### Deliverables summary
+| # | Deliverable | File(s) | New/Modified |
+|---|---|---|---|
+| 4.1 | Mission Control HTML dashboard generator | `src/core/dashboard.py` | New |
+| 4.2 | Enhanced MR comment template | `src/core/reporter.py` | Modified |
+| 4.3 | Enhanced Markdown audit report | `src/core/reporter.py` | Modified |
+| 4.4 | Pipeline integration (dashboard + enhanced reports) | `src/core/pipeline.py`, `src/adapters/cli.py`, `src/adapters/gitlab_adapter.py` | Modified |
+| 4.5 | Demo scenario files + backup artifacts | `demo_target/*.py`, `demo_target/backup_artifacts/` | New |
+| 4.6 | Demo script with timestamps | `docs/demo-script.md` | New |
+| 4.7 | Architecture diagram + visual assets | `docs/architecture.md` | New |
+| 4.8 | Tests for dashboard + enhanced reporter | `tests/test_dashboard.py`, `tests/test_reporter.py` | New + Modified |
+| 4.9 | README submission rewrite | `README.md` | Modified |
 
 ### Acceptance criteria
-- A non-technical reviewer can explain Argus value in <45 seconds
-- Demo consistently runs within 3-minute judged window
-- UI + MR outputs clearly communicate what broke, what was fixed, and why safe
+- [ ] `argus_dashboard.html` is generated as a pipeline artifact, opens in any modern browser, and communicates Argus value to a non-technical viewer within 45 seconds
+- [ ] Dashboard contains: executive summary, pipeline timeline, per-file verdict cards with expandable details, code panels (Lean proof + repaired code), audit trail metadata
+- [ ] Dashboard is fully self-contained: no external CSS/JS/CDN dependencies, no network requests
+- [ ] MR comment includes executive summary, verdict-grouped file sections, developer action items for VULNERABLE files, and repair diffs for FIXED files
+- [ ] MR comment renders correctly in GitLab Flavored Markdown and stays under 65,535 character limit
+- [ ] Markdown audit report includes executive summary, risk assessment, and recommendations
+- [ ] All three demo scenarios (`demo_target/`) run successfully with expected verdicts
+- [ ] Pre-generated backup artifacts exist for all demo scenarios
+- [ ] Demo script is exactly 3 minutes with timestamped segments covering: problem → trigger → detection → repair → UX → close
+- [ ] Architecture diagram accurately represents current pipeline stages and trust model
+- [ ] README communicates product value within 2 minutes of reading
+- [ ] All new and existing tests pass (`pytest tests/`)
+- [ ] No regressions: existing JSON/SARIF/SAST report formats are unchanged
+- [ ] CLI `--output-html` flag produces dashboard alongside all existing artifacts
 
 ### Evidence for review
-- UI screenshots/GIF/video capture
-- Final demo script with timestamps
-- Example MR before/after outputs
+- `argus_dashboard.html` sample (opened in browser, screenshot captured)
+- MR comment rendering in GitLab (screenshot or preview)
+- `Argus_Audit_Report.md` rendered preview
+- Demo script with timestamps (`docs/demo-script.md`)
+- Demo scenario run logs (all 3 scenarios × 1 run minimum)
+- Architecture diagram (`docs/architecture.md`)
+- Full test suite pass (`pytest tests/`)
+- README.md (rendered in GitLab repo view)
+
+### What does NOT change in Phase 4
+These files/components are explicitly out of scope:
+- `src/core/pipeline.py` core verification logic — only data surface changes (exposing `repaired_code`/`original_code` to reporters)
+- `src/core/obligation_policy.py` — deterministic preconditions unchanged
+- `src/core/translator/` — all translators unchanged
+- `src/core/verifier/` — Lean 4 / Dafny backends unchanged
+- `src/core/verdict.py` — verdict computation unchanged
+- `src/core/llm_provider.py` — provider contract unchanged
+- `src/core/ci_integrity.py` — CI gate suite unchanged
+- `config.yml`, `.gitlab/duo/agent-config.yml`, `.gitlab/duo/flows/argus_verify.yml` — agent/flow definitions unchanged
+- `benchmarks/seeded/` — automated test corpus unchanged (demo scenarios are separate in `demo_target/`)
+
+### Security and compliance note
+- Dashboard HTML must not include any API keys, tokens, or credentials in embedded data
+- Dashboard must not make any network requests (fully offline/self-contained)
+- Trace file paths shown in dashboard are relative, not absolute (no leaking of local filesystem paths)
+- Demo backup artifacts must not contain any real API keys or sensitive data
+- Pre-generated artifacts should be from runs against the benchmark/demo corpus only (no customer code)
+
+### Risks specific to Phase 4
+| Risk | Impact | Mitigation |
+|---|---|---|
+| Dashboard HTML is too complex / fragile | Maintenance burden, display bugs across browsers | Keep CSS/JS minimal; use semantic HTML (`<details>`, `<table>`, `<pre>`); test in Chrome, Firefox, Safari |
+| MR comment exceeds GitLab character limit | Comment is truncated or fails to post | Track character count; truncate obligation details via collapsible sections; test with large file sets |
+| Demo scenarios produce unexpected verdicts | Demo is unrehearsable or inconsistent | Use the simplest possible code patterns (same structure as benchmark corpus); pre-run and validate before locking |
+| Demo timing is too tight / too loose | Script doesn't fit in 3 minutes | Time each segment during writing; allow ±5 seconds per segment; have a cut-able segment (Segment 5 can be shortened) |
+| Legacy frontend expectations from judges | Judges expect a running web app | Dashboard HTML artifact + MR screenshot provides equivalent visual impact without server complexity; README makes it clear this is a CI-integrated agent, not a web app |
+| README rewrite loses existing content | Phase 2 sections or quick start docs are accidentally removed | Preserve all Phase 2 sections verbatim; rewrite is additive (new sections + reorganization), not destructive |
 
 ---
 
