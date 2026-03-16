@@ -1,0 +1,52 @@
+{
+  "tool": "ArgusV2",
+  "provider": "anthropic",
+  "model": "claude-sonnet-4-6",
+  "timestamp": "2026-03-16T01:48:47.781867+00:00",
+  "summary": {
+    "total": 1,
+    "verified": 0,
+    "fixed": 1,
+    "vulnerable": 0,
+    "unverified": 0,
+    "error": 0
+  },
+  "files": [
+    {
+      "filename": "benchmarks/seeded/vulnerable/negative_withdrawal.py",
+      "verdict": "FIXED",
+      "engine": "lean",
+      "message": "Repaired and verified",
+      "obligations": [
+        {
+          "id": "withdraw:non_negative_result",
+          "property": "withdraw(...) >= 0",
+          "category": "non_negativity",
+          "description": "Result should remain non-negative under validated inputs",
+          "severity": "critical",
+          "source": "policy"
+        }
+      ],
+      "assumptions": [
+        {
+          "property": "balance >= 0",
+          "description": "Account balance must be non-negative prior to withdrawal operation",
+          "justification": "Standard invariant for financial account balances; a negative starting balance would indicate corrupted state",
+          "source_type": "policy",
+          "source_ref": "FinancialAccountPolicy.v1",
+          "evidence_id": "EID-BAL-01",
+          "severity": "critical"
+        },
+        {
+          "property": "amount >= 0",
+          "description": "Withdrawal amount must be non-negative; a negative amount would invert the operation into a deposit",
+          "justification": "API contract for withdrawal operations requires a non-negative amount parameter",
+          "source_type": "api_schema",
+          "source_ref": "WithdrawAPI.schema.v1",
+          "evidence_id": "EID-AMT-01",
+          "severity": "critical"
+        }
+      ]
+    }
+  ]
+}

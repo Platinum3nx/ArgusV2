@@ -1,0 +1,52 @@
+{
+  "tool": "ArgusV2",
+  "provider": "anthropic",
+  "model": "claude-sonnet-4-6",
+  "timestamp": "2026-03-16T01:27:50.685928+00:00",
+  "summary": {
+    "total": 1,
+    "verified": 1,
+    "fixed": 0,
+    "vulnerable": 0,
+    "unverified": 0,
+    "error": 0
+  },
+  "files": [
+    {
+      "filename": "benchmarks/seeded/safe/saturating_withdrawal.py",
+      "verdict": "VERIFIED",
+      "engine": "lean",
+      "message": "All obligations passed",
+      "obligations": [
+        {
+          "id": "withdraw:non_negative_result",
+          "property": "withdraw(...) >= 0",
+          "category": "non_negativity",
+          "description": "Result should remain non-negative under validated inputs",
+          "severity": "critical",
+          "source": "policy"
+        }
+      ],
+      "assumptions": [
+        {
+          "property": "balance >= 0",
+          "description": "Balance must be non-negative before withdrawal",
+          "justification": "A bank account balance is a non-negative integer by domain invariant; negative balances are not representable in this model",
+          "source_type": "policy",
+          "source_ref": "AccountDomainPolicy.v1",
+          "evidence_id": "EID-BAL-01",
+          "severity": "critical"
+        },
+        {
+          "property": "amount >= 0",
+          "description": "Withdrawal amount must be non-negative; a negative withdrawal would be a deposit and is not handled here",
+          "justification": "API schema for withdrawal endpoint requires amount to be a non-negative integer",
+          "source_type": "api_schema",
+          "source_ref": "WithdrawalAPI.schema.v1",
+          "evidence_id": "EID-AMT-01",
+          "severity": "critical"
+        }
+      ]
+    }
+  ]
+}

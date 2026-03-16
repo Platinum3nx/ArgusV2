@@ -1,0 +1,52 @@
+{
+  "tool": "ArgusV2",
+  "provider": "anthropic",
+  "model": "claude-sonnet-4-6",
+  "timestamp": "2026-03-16T01:30:25.077055+00:00",
+  "summary": {
+    "total": 1,
+    "verified": 0,
+    "fixed": 0,
+    "vulnerable": 1,
+    "unverified": 0,
+    "error": 0
+  },
+  "files": [
+    {
+      "filename": "benchmarks/seeded/drift/uniqueness_probe.py",
+      "verdict": "VULNERABLE",
+      "engine": "lean",
+      "message": "One or more canonical obligations failed",
+      "obligations": [
+        {
+          "id": "append_unique:preserve_uniqueness",
+          "property": "Collection updates preserve uniqueness where required",
+          "category": "uniqueness",
+          "description": "List/set update patterns should avoid duplicate insertion",
+          "severity": "high",
+          "source": "policy"
+        }
+      ],
+      "assumptions": [
+        {
+          "property": "isinstance(items, list) and all(isinstance(x, int) for x in items)",
+          "description": "items must be a list of integers as declared by the type annotation",
+          "justification": "Python type annotation list[int] declares the expected type for items",
+          "source_type": "api_schema",
+          "source_ref": "append_unique signature: items: list[int]",
+          "evidence_id": "EID-AU-01",
+          "severity": "critical"
+        },
+        {
+          "property": "isinstance(value, int)",
+          "description": "value must be an integer as declared by the type annotation",
+          "justification": "Python type annotation int declares the expected type for value",
+          "source_type": "api_schema",
+          "source_ref": "append_unique signature: value: int",
+          "evidence_id": "EID-AU-02",
+          "severity": "critical"
+        }
+      ]
+    }
+  ]
+}
