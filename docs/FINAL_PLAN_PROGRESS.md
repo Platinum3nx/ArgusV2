@@ -138,12 +138,52 @@ Stabilize end-to-end autonomous behavior so outcomes are deterministic, fail-clo
 ---
 
 ## Phase 4 — UX, Frontend, and Demo Polish
-**Status:** NOT STARTED (in this pass)
+**Status:** COMPLETED (2026-03-16)
 
-### Planned work
-- [ ] Mission Control UI polish.
-- [ ] Final MR summary/report templates.
-- [ ] 3-minute deterministic demo script + fallback assets.
+### Execution status
+
+- [x] **Step 4.1**: Created `src/core/dashboard.py` — Mission Control HTML dashboard generator. Self-contained (no external CDN), reads `argus_report.json` + trace artifacts, produces `argus_dashboard.html` with: header/provider badge, executive summary with risk level, pipeline stage timeline, per-file verdict cards (expandable, with obligation tables + action guidance + code panels), audit trail. Generated as a pipeline artifact by `cli.py --output-html`.
+- [x] **Step 4.2**: Enhanced `render_mr_comment` in `src/core/reporter.py` — now includes executive summary, 4-column verdict summary table, grouped sections (Action Required → Auto-Repaired → Unverified → Verified), actionable developer guidance for VULNERABLE files with collapsible obligation details, repair diffs for FIXED files, trust model footer. All new parameters backward-compatible (optional kwargs).
+- [x] **Step 4.3**: Enhanced `render_markdown_report` in `src/core/reporter.py` — now includes executive summary paragraph, risk level assessment, per-file action items, repair diffs for FIXED files, Risk Assessment section with verdict table, Recommendations section, Audit Metadata footer. All new parameters optional.
+- [x] **Step 4.4**: Pipeline + CLI + GitLab adapter integration — `pipeline.run_many()` now tracks `_original_code` and `_repaired_code` dicts; `cli.py` passes them to reporter and GitLab adapter; `cli.py --output-html` wires dashboard generation non-blockingly; `gitlab_adapter.py` forwarded new `original_code`/`repaired_code` kwargs to `render_mr_comment`.
+- [x] **Step 4.5**: Demo scenarios created in `demo_target/` — `safe_transfer.py` (VERIFIED), `vulnerable_transfer.py` (FIXED/VULNERABLE), `drift_withdrawal.py` (VULNERABLE), each with clear narrative docstrings. `demo_target/README.md` documents run commands and backup strategy. `demo_target/backup_artifacts/` directory created.
+- [x] **Step 4.6**: Demo script written to `docs/demo-script.md` — exact 3-minute breakdown with timestamps (6 segments), narration text, screen content, key visuals, judging rubric coverage table, backup contingency plan.
+- [x] **Step 4.7**: Architecture diagrams written to `docs/architecture.md` — full pipeline architecture ASCII diagram, verdict decision tree, component layer map, trust model, before/after impact comparison, quantitative evidence table.
+- [x] **Step 4.8**: Tests written — `tests/test_dashboard.py` (21 tests covering generation, HTML validity, required sections, embedded data, no external deps, all verdict types, code panels, risk helpers, edge cases) + `tests/test_reporter.py` expanded (37 tests covering all 5 report formats + enhanced MR comment and Markdown report functionality). 136/136 total tests passing.
+- [x] **Step 4.9**: README rewritten (`README.md`) — submission-grade 11-section document: hero positioning, what it does, custom agent/flow proof, architecture diagram, quickstart, Anthropic integration table, output artifacts table, demo scenarios, repo structure, reliability evidence, judging alignment.
+- [x] **Quickstart updated**: `docs/quickstart.md` updated to reference `ANTHROPIC_API_KEY`, new dashboard artifact, and all 3 demo scenarios.
+
+### Phase 4 evidence
+
+- `src/core/dashboard.py` — Mission Control HTML generator
+- `src/core/reporter.py` — enhanced MR comment + Markdown report
+- `src/adapters/cli.py` — `--output-html` flag + dashboard integration
+- `src/adapters/gitlab_adapter.py` — forwarded code dicts to render_mr_comment
+- `src/core/pipeline.py` — `_original_code`/`_repaired_code` tracking
+- `tests/test_dashboard.py` — 21 dashboard tests
+- `tests/test_reporter.py` — 37 reporter tests (all formats + enhanced)
+- `demo_target/safe_transfer.py`, `vulnerable_transfer.py`, `drift_withdrawal.py`
+- `docs/demo-script.md` — 3-minute timestamped demo script
+- `docs/architecture.md` — full architecture diagrams
+- `README.md` — submission-grade rewrite
+- `docs/quickstart.md` — updated with new artifacts and demo scenarios
+- Full test suite: **136/136 passing** (`pytest tests/`)
+
+### Phase 4 acceptance criteria status
+
+- [x] `argus_dashboard.html` generated as a pipeline artifact, opens in any modern browser
+- [x] Dashboard contains: executive summary, pipeline timeline, per-file verdict cards with expandable details, code panels, audit trail metadata
+- [x] Dashboard is fully self-contained: no external CSS/JS/CDN dependencies, no network requests
+- [x] MR comment includes executive summary, verdict-grouped file sections, developer action items for VULNERABLE files, repair diffs for FIXED files
+- [x] MR comment renders correctly in GitLab Flavored Markdown, stays under 65,535 character limit (tested)
+- [x] Markdown audit report includes executive summary, risk assessment, and recommendations
+- [x] All three demo scenarios exist in `demo_target/` with expected verdicts documented
+- [x] Demo script is timestamped 3-minute script with 6 segments covering full flow
+- [x] Architecture diagram accurately represents current pipeline stages and trust model
+- [x] README communicates product value with judging alignment table
+- [x] All new and existing tests pass (136/136)
+- [x] No regressions: existing JSON/SARIF/SAST report formats unchanged
+- [x] CLI `--output-html` flag produces dashboard alongside all existing artifacts
 
 ---
 

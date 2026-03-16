@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import List
+from typing import Dict, List
 
 from .assumption_evidence import validate_assumptions
 from .equivalence import run_equivalence_check
@@ -77,6 +77,8 @@ class ArgusPipeline:
         self.dafny_verifier = DafnyVerifier(require_docker=self.config.require_docker_verify)
         self.router = VerifierRouter(self.lean_verifier, self.dafny_verifier)
         self.last_run_id: str | None = None
+        self._original_code: Dict[str, str] = {}
+        self._repaired_code: Dict[str, str] = {}
 
     def run_file(self, filename: str, python_code: str) -> PipelineResult:
         run_id = self._new_run_id()
@@ -382,16 +384,22 @@ class ArgusPipeline:
         self.last_run_id = run_id
         self._write_manifest(run_id=run_id, filenames=[name for name, _ in files], mode="batch")
 
+        # Track original code keyed by filename for reporter diffs
+        self._original_code: Dict[str, str] = {name: code for name, code in files}
+        self._repaired_code: Dict[str, str] = {}
+
         results: List[PipelineResult] = []
         for filename, code in files:
-            results.append(
-                self._run_file(
-                    filename=filename,
-                    python_code=code,
-                    allow_repair=self.config.allow_repair,
-                    run_id=run_id,
-                )
+            result = self._run_file(
+                filename=filename,
+                python_code=code,
+                allow_repair=self.config.allow_repair,
+                run_id=run_id,
             )
+            results.append(result)
+            if result.repaired_code:
+                self._repaired_code[filename] = result.repaired_code
+
         self._write_summary(run_id=run_id, results=results)
 
         reports: List[FileReport] = []

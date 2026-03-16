@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 from datetime import datetime, timezone
-from typing import Callable, List, Sequence
+from typing import Callable, Dict, List, Optional, Sequence
 
 from src.core.reporter import FileReport, render_mr_comment
 
@@ -58,8 +58,16 @@ class GitLabAdapter:
         dry_run: bool = False,
         provider: str = "",
         model: str = "",
+        original_code: Optional[Dict[str, str]] = None,
+        repaired_code: Optional[Dict[str, str]] = None,
     ) -> GitLabPublishResult:
-        comment = self.build_comment(files, provider=provider, model=model)
+        comment = self.build_comment(
+            files,
+            provider=provider,
+            model=model,
+            original_code=original_code,
+            repaired_code=repaired_code,
+        )
         labels = self.derive_labels(files)
 
         if not self.configured():
@@ -118,10 +126,18 @@ class GitLabAdapter:
         files: Sequence[FileReport],
         provider: str = "",
         model: str = "",
+        original_code: Optional[Dict[str, str]] = None,
+        repaired_code: Optional[Dict[str, str]] = None,
     ) -> str:
         commit = (os.getenv("CI_COMMIT_SHA") or "local")[:8]
         timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%SZ")
-        body = render_mr_comment(list(files), provider=provider, model=model)
+        body = render_mr_comment(
+            list(files),
+            provider=provider,
+            model=model,
+            original_code=original_code,
+            repaired_code=repaired_code,
+        )
         return f"**Commit**: `{commit}` | **Generated**: {timestamp}\n\n{body}"
 
     def derive_labels(self, files: Sequence[FileReport]) -> List[str]:

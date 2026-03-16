@@ -8,6 +8,7 @@ from typing import List, Tuple
 
 from src.adapters.gitlab_adapter import GitLabAdapter
 from src.core.ci_integrity import CIGateReport, run_ci_integrity_suite
+from src.core.dashboard import generate_dashboard
 from src.core.llm_provider import ConfigurationError, create_llm_client
 from src.core.pipeline import ArgusPipeline, PipelineConfig
 from src.core.reporter import (
@@ -15,6 +16,7 @@ from src.core.reporter import (
     render_gitlab_sast_report,
     render_json_report,
     render_markdown_report,
+    render_mr_comment,
     render_sarif_report,
 )
 from src.utils.file_router import discover_python_files
@@ -47,6 +49,12 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--output-sarif", type=str, default="argus-sarif-report.json")
     parser.add_argument("--output-gl-sast", type=str, default="gl-sast-report.json")
     parser.add_argument("--output-ci-gates", type=str, default="argus-ci-gates.json")
+    parser.add_argument(
+        "--output-html",
+        type=str,
+        default="argus_dashboard.html",
+        help="Path for Mission Control HTML dashboard output",
+    )
     parser.add_argument("--allow-local-verify", action="store_true")
     parser.add_argument("--skip-gitlab-publish", action="store_true")
     return parser
@@ -82,15 +90,41 @@ def main() -> int:
     prov = llm_client.provider_name
     mdl = llm_client.model_id
 
+    # Collect code dicts from pipeline for enhanced reports
+    original_code = pipeline._original_code
+    repaired_code = pipeline._repaired_code
+
+    # Standard machine-readable artifacts (format unchanged)
     json_payload = render_json_report(reports, provider=prov, model=mdl)
-    markdown = render_markdown_report(reports)
     sarif_payload = render_sarif_report(reports, provider=prov, model=mdl)
     gl_sast_payload = render_gitlab_sast_report(reports)
+
+    # Enhanced human-readable artifacts
+    markdown = render_markdown_report(
+        reports,
+        provider=prov,
+        model=mdl,
+        repaired_code=repaired_code,
+        original_code=original_code,
+    )
 
     dump_json(args.output_json, json_payload)
     Path(args.output_md).write_text(markdown, encoding="utf-8")
     dump_json(args.output_sarif, sarif_payload)
     dump_json(args.output_gl_sast, gl_sast_payload)
+
+    # Mission Control HTML dashboard
+    try:
+        generate_dashboard(
+            report_path=args.output_json,
+            trace_root=str(config.trace_root),
+            run_id=pipeline.last_run_id,
+            output_path=args.output_html,
+            original_code=original_code,
+        )
+    except Exception as exc:
+        # Dashboard generation is non-blocking — all other artifacts are already written
+        print(json.dumps({"dashboard_warning": f"Dashboard generation failed: {exc}"}, indent=2))
 
     ci_gate_report: CIGateReport | None = None
     if args.mode == "ci":
@@ -105,7 +139,11 @@ def main() -> int:
 
         if not args.skip_gitlab_publish:
             gitlab_result = GitLabAdapter.from_env().publish_results(
-                reports, provider=prov, model=mdl
+                reports,
+                provider=prov,
+                model=mdl,
+                original_code=original_code,
+                repaired_code=repaired_code,
             )
             print(json.dumps({"gitlab_publish": gitlab_result.reason}, indent=2))
 
