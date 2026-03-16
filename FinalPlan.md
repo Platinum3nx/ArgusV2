@@ -1474,27 +1474,762 @@ These files/components are explicitly out of scope:
 
 ## Phase 5 — Submission Packaging & Launch Readiness
 ### Goal
-Complete all hackathon submission requirements and pass startup-grade launch gates.
+Close every remaining gap between "working hackathon project" and "submission-grade, startup-credible product." Produce the full evidence corpus for Launch Readiness Gates A–G, record the demo video, package the Devpost submission, and pass a clean-environment end-to-end dry run with zero manual intervention. When Phase 5 is complete, ArgusV2 is both hackathon-submittable and credible as an enterprise pilot offering.
 
-### Scope
-- Submission completeness (repo/license/video/description)
-- Launch readiness gates A–G
-- Commercial readiness docs and pilot narrative
+### Why this phase matters
+Phases 1–4 built the product: reliable verification (Phase 1), agent/flow compliance (Phase 2), Anthropic integration (Phase 3), and visual/demo polish (Phase 4). But none of that matters if:
+- A judge can't install and run it from the README alone
+- There's no video demonstrating the autonomous flow
+- Enterprise evaluation questions (security posture, data handling, ops support, deployment model) have no documented answers
+- The submission is incomplete or fails Devpost requirements
 
-### Deliverables
-- Final submission package
-- Completed gate evidence docs
-- Go/No-Go checklist outcome
+Phase 5 is the difference between "impressive project" and "submittable project that could become a product." Every startup-grade software product needs: deployment documentation, security/privacy posture, operational runbooks, commercial positioning, and a reproducible install experience. Phase 5 produces all of these while simultaneously closing the hackathon submission checklist.
+
+This is also the **last quality gate**. If Phase 5 finds a broken install path, a missing artifact, a flaky demo scenario, or a security gap — it must be fixed here. There is no Phase 6.
+
+### Current state (entering Phase 5)
+| Component | Status | Gap |
+|---|---|---|
+| Core pipeline (verify → diagnose → repair → re-verify) | COMPLETE | None — 136 tests passing, 9/9 Anthropic validation runs |
+| Agent/flow requirement | COMPLETE | Repo visibility needs manual verification (Step 2.6) |
+| Anthropic integration | COMPLETE | Provider provenance in all artifacts |
+| Mission Control dashboard | COMPLETE | Self-contained HTML, no external deps |
+| Enhanced MR comments + reports | COMPLETE | Executive summary, verdict grouping, repair diffs |
+| Demo scenarios (`demo_target/`) | COMPLETE | 3 scenarios with backup artifacts directory |
+| Demo script (`docs/demo-script.md`) | COMPLETE | 3-minute timestamped script |
+| README (submission-grade) | COMPLETE | 11-section document with judging alignment |
+| Quickstart (`docs/quickstart.md`) | COMPLETE | Fork-to-action instructions |
+| Submission text (`docs/submission-text.md`) | COMPLETE | Devpost-ready with judge FAQ |
+| Architecture docs (`docs/architecture.md`) | COMPLETE | Pipeline diagrams + trust model |
+| Reliability report (`docs/reliability-report.md`) | COMPLETE | Phase 1 evidence (needs Phase 5 update for Gate A) |
+| `docs/deployment-guide.md` | MISSING | No deployment documentation |
+| `docs/security-posture.md` | MISSING | No security/privacy posture document |
+| `docs/data-handling-policy.md` | MISSING | No data handling/retention policy |
+| `docs/ops-runbook.md` | MISSING | No operational runbook |
+| `docs/troubleshooting.md` | MISSING | No troubleshooting guide |
+| `docs/enterprise-readiness.md` | MISSING | No enterprise readiness overview |
+| `docs/pilot-proposal.md` | MISSING | No pilot plan with success metrics |
+| `docs/competitive-positioning.md` | MISSING | No competitive analysis |
+| `docs/install-validation.md` | MISSING | No clean-install test evidence |
+| `docs/demo-integrity-checklist.md` | MISSING | No demo integrity proof |
+| Demo video (3-minute) | NOT RECORDED | Script exists but video not produced |
+| Devpost submission | NOT SUBMITTED | Text drafted but not submitted |
+| Screenshot/GIF pack | MISSING | No visual assets for submission |
+| License file | EXISTS (`LICENSE`) | CC0 — verify visible on repo page |
+| Dockerfile | EXISTS | Needs validation in clean environment |
+| `.gitlab-ci.yml` | EXISTS | Needs final validation of artifact names/retention |
+| Clean-environment install test | NOT DONE | No evidence of fresh install success |
+| Gate A–G evidence | NOT PRODUCED | All 7 gates need evidence documents |
+
+### Strategy
+**Evidence-first, then package, then validate.** Three tracks executed in order:
+
+1. **Enterprise evidence corpus** (Steps 5.1–5.7) — Write all missing documentation that closes Launch Readiness Gates A–G. Each doc is both a gate artifact AND a sales asset for enterprise conversations. These aren't throwaway hackathon docs — they should be genuine artifacts that a CISO, VP Engineering, or DevSecOps lead would expect to see during vendor evaluation.
+
+2. **Validate before capture** (Step 5.8) — Clean-environment dry run + backup artifact generation. This catches broken install paths or missing dependencies BEFORE investing time in screenshots and video. Backup artifacts are generated here with documented provenance.
+
+3. **Submission packaging** (Steps 5.9–5.11) — Screenshots from the validated dry run, demo video using the known-working setup, Devpost finalization.
+
+4. **Ship decision** (Step 5.12) — Go/No-Go checklist. All gates, all checklists, ship-or-fix.
+
+### Execution steps (ordered)
+
+#### Step 5.1 — Security, privacy, and governance documentation (Gate B)
+**New files**: `docs/security-posture.md`, `docs/data-handling-policy.md`
+
+These are the two most important enterprise documents. Any serious buyer will ask "What data leaves my environment?" and "What's your security model?" before even looking at a demo. These docs convert a hackathon project into a credible vendor offering.
+
+**`docs/security-posture.md`** — Security posture document covering:
+
+1. **Trust model** — Explicitly document the Claude = ADVISOR / Lean = AUTHORITY separation. Explain why LLM output is never trusted directly (always gate-checked by formal verifier). State that false VERIFIED verdicts are impossible by construction.
+
+2. **Secret handling model**:
+   - API keys (`ANTHROPIC_API_KEY`, `GEMINI_API_KEY`, `GITLAB_TOKEN`) — stored as GitLab CI/CD masked variables, never logged, never included in artifacts or trace files
+   - Token scope requirements: `GITLAB_TOKEN` needs `api` scope for MR comment/label publishing; `ANTHROPIC_API_KEY` / `GEMINI_API_KEY` need standard API access
+   - Key rotation policy: keys can be rotated at any time by updating CI/CD variables; no session state or cached credentials
+   - Docker image: no secrets baked into image layers
+
+3. **Access control / role model**:
+   - **Developer**: pushes code, sees MR comments and labels, downloads artifacts
+   - **DevOps/Platform Engineer**: configures CI/CD variables, manages runner infrastructure, controls pipeline settings
+   - **Security Lead**: reviews dashboard and SARIF reports, configures merge gate policy (advisory vs blocking)
+   - **Admin**: manages GitLab project settings, controls public visibility, manages API key provisioning
+
+4. **Fail-closed guarantees**:
+   - Missing API key → `ConfigurationError` at startup (no silent degradation)
+   - LLM returns empty/malformed response → pipeline returns ERROR or VULNERABLE (never false VERIFIED)
+   - Verifier process crashes → verdict is ERROR (never VERIFIED)
+   - Network failure during LLM call → exception propagated, pipeline fails closed
+   - All 14 fail-closed scenarios tested and passing (reference test suite)
+
+5. **Supply chain security**:
+   - Python dependencies listed in `requirements.txt` with version pins
+   - Docker base image specified in `Dockerfile`
+   - No post-install scripts or dynamic code execution from untrusted sources
+   - Lean 4 and Dafny verifiers are pre-built in Docker image (not downloaded at runtime)
+
+6. **Known limitations and mitigations**:
+   - LLM prompts contain user source code — operators should review their provider's data processing terms
+   - Trace artifacts contain LLM-generated content (translations, proof candidates) — retention window should be configured per organization policy
+   - Current version does not encrypt trace artifacts at rest (file-system permissions are the access control boundary)
+
+**`docs/data-handling-policy.md`** — Data handling and retention policy covering:
+
+1. **Data flow diagram**: Show exactly what data flows where:
+   - Source code → LLM provider (via API call) → LLM response (proof code, repair code) → pipeline
+   - Source code → local trace artifacts (`.argus-trace/`)
+   - Verdicts + metadata → MR comments + artifacts (GitLab)
+   - No data sent to any third party beyond the configured LLM provider
+
+2. **Data categories and handling**:
+   | Data Category | Storage Location | Retention | Contains PII? | Encryption |
+   |---|---|---|---|---|
+   | Source code (audited files) | CI runner (ephemeral) + trace artifacts | CI runner lifecycle + artifact retention setting | Possible (depends on code) | At rest: none (filesystem); in transit: TLS to LLM API |
+   | LLM prompts | Sent to provider API | Per provider retention policy | Unlikely (code + obligations only) | TLS in transit |
+   | LLM responses | Trace artifacts | Artifact retention setting | No | At rest: none |
+   | Verdicts + obligations | JSON/SARIF/Markdown reports | Artifact retention setting | No | At rest: none |
+   | API keys | GitLab CI/CD variables (masked) | Until rotated | No | GitLab managed |
+
+3. **Prompt content policy**:
+   - Prompts contain: function source code, obligation descriptions, error messages from verifier, proof candidates
+   - Prompts do NOT contain: API keys, tokens, credentials, user names, environment variables, filesystem paths, git history
+   - No prompt logging beyond trace artifacts (no separate telemetry or analytics pipeline)
+
+4. **Retention and deletion**:
+   - Trace artifacts: retained per GitLab artifact retention settings (configurable by admin)
+   - LLM provider data: subject to provider's data retention policy (Anthropic: see API terms; Google: see Gemini API terms)
+   - Recommendation: operators should configure artifact retention to match their organization's data governance requirements
+
+5. **Compliance considerations**:
+   - No persistent database — all state is per-run artifacts
+   - No user accounts or authentication beyond GitLab's own auth
+   - GDPR note: if source code contains personal data, the data handling policy of the configured LLM provider applies to that data; operators should assess this before deployment
+
+**Acceptance**: Both docs are complete, internally consistent, and reference real code paths / configuration options. A CISO or security reviewer reading these docs should be able to assess Argus's data handling posture without reading source code.
+
+#### Step 5.2 — Deployment guide and environment compatibility (Gate C)
+**New files**: `docs/deployment-guide.md`, `docs/install-validation.md`
+
+**`docs/deployment-guide.md`** — Complete deployment guide covering:
+
+1. **Prerequisites**:
+   - GitLab instance (SaaS or self-managed, 15.0+)
+   - GitLab Runner with Docker executor (or shell executor with Docker installed)
+   - API key for at least one LLM provider (Anthropic recommended)
+   - `GITLAB_TOKEN` with `api` scope for MR interaction
+   - (Optional) Lean 4 installed locally for `--allow-local-verify` mode
+
+2. **Deployment options**:
+
+   **Option A: GitLab CI/CD (recommended — zero infrastructure)**
+   - Fork repo → set CI/CD variables → push code → pipeline auto-runs
+   - Step-by-step with screenshots of CI/CD variable configuration
+   - Artifact location and how to access dashboard/reports
+   - Runner resource recommendations (CPU/memory for Lean 4 compilation)
+
+   **Option B: Docker standalone**
+   - `docker build -t argus:latest .`
+   - `docker run -e ANTHROPIC_API_KEY=... -v $(pwd):/workspace argus:latest --file /workspace/target.py --allow-local-verify`
+   - Volume mount strategy for input files and output artifacts
+   - Environment variable reference table
+
+   **Option C: Local development / CLI**
+   - `pip install -r requirements.txt`
+   - Lean 4 / elan installation instructions (link to official docs)
+   - `python -m src.adapters.cli --file target.py --allow-local-verify --provider anthropic`
+   - Troubleshooting common local setup issues
+
+3. **Environment variable reference**:
+   | Variable | Required | Default | Description |
+   |---|---|---|---|
+   | `ANTHROPIC_API_KEY` | Yes (for Anthropic provider) | — | Anthropic API key |
+   | `GEMINI_API_KEY` | Yes (for Gemini provider) | — | Google Gemini API key |
+   | `GITLAB_TOKEN` | Yes (for MR publishing) | — | GitLab personal/project access token with `api` scope |
+   | `LLM_PROVIDER` | No | `anthropic` | LLM provider (`anthropic` or `gemini`) |
+   | `CI_MERGE_REQUEST_IID` | Auto (CI only) | — | Set by GitLab CI for MR-triggered pipelines |
+   | `CI_PROJECT_ID` | Auto (CI only) | — | Set by GitLab CI |
+
+4. **Configuration options**:
+   - CLI flags reference (`--file`, `--repo-path`, `--mode`, `--provider`, `--model`, `--allow-local-verify`, `--output-html`)
+   - Advisory vs blocking merge gate policy
+   - Artifact retention configuration in `.gitlab-ci.yml`
+
+5. **Upgrade path**:
+   - Pull latest image / update fork
+   - No database migrations (stateless per-run architecture)
+   - Environment variable contract is backward-compatible (new optional vars, existing required vars unchanged)
+   - Config format versioned in `config.yml`
+
+6. **Runner resource recommendations**:
+   | Profile | CPU | Memory | Disk | Use Case |
+   |---|---|---|---|---|
+   | Minimal | 2 cores | 4 GB | 2 GB | Single file, CI pipeline |
+   | Recommended | 4 cores | 8 GB | 5 GB | Multi-file repo scan |
+   | Large | 8 cores | 16 GB | 10 GB | Enterprise monorepo |
+
+**`docs/install-validation.md`** — Clean install test protocol and results:
+
+1. **Test protocol**: Steps to validate a fresh install works end-to-end
+   - Start from clean environment (fresh Docker container or new virtualenv)
+   - Follow deployment guide instructions only (no undocumented steps)
+   - Run all 3 demo scenarios
+   - Verify all artifacts are produced
+   - Record output and timing
+
+2. **Compatibility matrix**:
+   | Environment | Python | OS | Docker | Status | Notes |
+   |---|---|---|---|---|---|
+   | macOS (Apple Silicon) | 3.11+ | macOS 14+ | Docker Desktop | Target | Primary dev environment |
+   | Linux (x86_64) | 3.11+ | Ubuntu 22.04+ | Docker CE | Target | CI runner environment |
+   | GitLab SaaS Runner | 3.11+ | Linux | Docker executor | Target | Production deployment |
+
+3. **Test results**: (to be filled during Step 5.11 execution)
+
+**Acceptance**: A developer who has never seen ArgusV2 can follow `docs/deployment-guide.md` and get a working pipeline producing correct verdicts within 15 minutes. Environment variable contract is complete and matches actual code. `docs/install-validation.md` contains protocol for reproducible validation.
+
+#### Step 5.3 — Operations, monitoring, and troubleshooting (Gate D)
+**New files**: `docs/ops-runbook.md`, `docs/troubleshooting.md`
+
+**`docs/ops-runbook.md`** — Operational runbook covering:
+
+1. **Monitoring points**:
+   | Signal | Source | What to Watch | Action on Anomaly |
+   |---|---|---|---|
+   | Pipeline pass/fail rate | GitLab CI analytics | >5% ERROR rate | Check verifier health, runner resources |
+   | Verdict distribution | `argus_report.json` aggregation | Unexpected spike in VULNERABLE | Review recent code changes; may indicate real regression wave |
+   | LLM provider errors | Pipeline logs | Provider timeout/rate-limit | Check API key validity, provider status page |
+   | Lean 4 compilation time | Trace artifact timing | >60s per file | Increase runner memory; check for pathological proof obligations |
+   | Artifact completeness | CI artifact list | Missing expected artifacts | Check disk space, permissions, pipeline stage ordering |
+
+2. **Incident response for top failure modes**:
+
+   **Incident: LLM provider is down/unreachable**
+   - Symptoms: Pipeline fails at invariant discovery or repair stage
+   - Impact: All files return ERROR verdict; merge gate blocks
+   - Response: Check provider status page; if prolonged, switch to backup provider (`--provider gemini`); update CI/CD variable
+   - Prevention: Monitor provider status; configure timeout/retry in pipeline config
+
+   **Incident: Lean 4 verifier crashes or hangs**
+   - Symptoms: Pipeline hangs at verification stage; individual files show ERROR
+   - Impact: Affected files unverifiable; verdict defaults to ERROR (fail-closed)
+   - Response: Check runner memory (Lean 4 is memory-intensive); restart runner; check for pathological input code
+   - Prevention: Set per-file verification timeout; monitor runner resource utilization
+
+   **Incident: GitLab API failures (MR comment/label)**
+   - Symptoms: Pipeline completes but no MR comment posted; no labels applied
+   - Impact: Verdicts produced but not visible to developer in MR
+   - Response: Check `GITLAB_TOKEN` validity and scope; verify API rate limits; manually check artifacts
+   - Prevention: Use project access token (not personal) for stability; monitor token expiry
+
+   **Incident: False negative (VERIFIED for actually vulnerable code)**
+   - Symptoms: Code with known vulnerability passes verification
+   - Impact: Critical — undermines trust model
+   - Response: Impossible by construction if verifier is functioning correctly (Lean 4 proofs are sound). If suspected: check obligation derivation (is the obligation being generated?), check proof (is it actually proving the right property?), check for assumption inflation (are LLM assumptions covering the vulnerability?)
+   - Prevention: Run mutation testing gate (`ci_integrity.py`); review assumption list for suspicious inter-parameter constraints
+   - Note: Soundness fix in Phase 3 (assumption filtering) addresses the primary historical cause
+
+3. **Routine maintenance tasks**:
+   - API key rotation: update CI/CD variables → next pipeline run uses new key
+   - Runner update: pull latest Docker image → rebuild
+   - Artifact cleanup: configure GitLab artifact retention policy
+   - Benchmark re-validation: run CI integrity gates after any core code change
+
+4. **Support SLA assumptions (for pilot customers)**:
+   - Scope: configuration, deployment, verdict interpretation
+   - Response time: best-effort during pilot period (no 24/7 commitment)
+   - Escalation: GitHub issues for bug reports; direct contact for pilot participants
+   - Exclusions: custom obligation development, provider API billing, GitLab infrastructure
+
+**`docs/troubleshooting.md`** — Symptom-to-fix troubleshooting guide:
+
+| Symptom | Likely Cause | Fix |
+|---|---|---|
+| `ConfigurationError: ANTHROPIC_API_KEY not set` | Missing env var or CI/CD variable | Set `ANTHROPIC_API_KEY` in CI/CD variables (masked) or `export` locally |
+| `ConfigurationError: Unknown provider 'xxx'` | Invalid `--provider` value | Use `anthropic` or `gemini` |
+| Pipeline hangs at verification stage | Lean 4 compilation on low-memory runner | Increase runner memory to 8GB+; use `--allow-local-verify` for local runs |
+| `argus_dashboard.html` not generated | Report JSON missing or dashboard generation error | Check that `argus_report.json` was produced; dashboard failure is non-blocking (other artifacts still generated) |
+| MR comment not posted | `GITLAB_TOKEN` missing, expired, or insufficient scope | Verify token has `api` scope; check token expiry; verify `CI_MERGE_REQUEST_IID` is set |
+| All files return ERROR | Provider unreachable or verifier not installed | Check API key; verify Lean 4 is installed (`lean --version`); check network access to provider |
+| VERIFIED verdict for obviously vulnerable code | Assumption inflation (LLM assumptions cover the bug) | Review assumptions in trace artifacts; check for inter-parameter constraints; this was fixed in Phase 3 assumption filtering |
+| Different verdicts across runs | Non-deterministic LLM output affecting obligation discovery | Expected for edge-case code patterns; deterministic core (obligations, verification) is stable; LLM suggestions may vary |
+| `ModuleNotFoundError: No module named 'anthropic'` | Missing dependency | Run `pip install -r requirements.txt` |
+| Docker build fails | Missing base image or network issues | Check Dockerfile base image availability; verify network access during build |
+| CI job fails with "no files to audit" | No `.py` files in auditable directories | Ensure Python files are in directories not excluded by filter (not in `tests/`, `benchmarks/`, `legacy/`) |
+
+**Acceptance**: A DevOps engineer encountering any of the top 10 failure modes can diagnose and resolve the issue using these docs alone, without reading source code. Runbook covers monitoring, incident response, and maintenance for all production-relevant scenarios.
+
+#### Step 5.4 — Enterprise readiness and commercial positioning (Gates E + F)
+**New files**: `docs/enterprise-readiness.md`, `docs/pilot-proposal.md`, `docs/competitive-positioning.md`
+
+**`docs/enterprise-readiness.md`** — Enterprise readiness overview (combines Gate E + F context):
+
+1. **Product positioning**: ArgusV2 is positioned for **platform engineering and application security teams** at organizations where:
+   - Code velocity outpaces security review capacity
+   - Compliance frameworks require evidence of security verification (SOC 2, ISO 27001, PCI DSS)
+   - AI-assisted development (Copilot, Claude, etc.) is increasing code volume without proportional security coverage
+   - False positives from SAST tools create alert fatigue and slow velocity
+
+2. **Ideal Customer Profile (ICP)**:
+   - Mid-to-large engineering organizations (50–5000 developers)
+   - Already using GitLab for CI/CD
+   - Has a security engineering or AppSec function
+   - Ships financial, healthcare, or infrastructure software where correctness is non-negotiable
+   - Pain: security review bottleneck, SAST noise, compliance evidence burden
+
+3. **Buyer personas**:
+   | Persona | Title | Pain Point | Argus Value |
+   |---|---|---|---|
+   | Primary | VP/Director of Platform Engineering | "We can't hire enough security reviewers to keep up with AI-assisted code velocity" | Autonomous pre-merge verification eliminates the review bottleneck |
+   | Primary | Head of Application Security | "Our SAST tools generate too many false positives; real bugs hide in the noise" | Mathematical proofs = zero false positives; only real issues surfaced |
+   | Secondary | CISO / Compliance Lead | "We need auditable evidence that security properties were verified before merge" | Full trace artifacts, SARIF reports, audit trail per commit |
+   | Influencer | Senior Developer | "Security tools slow me down and flag irrelevant issues" | Sub-5-minute pipeline; actionable MR comments; auto-repair for fixable issues |
+
+4. **ROI narrative**:
+   - **Time saved**: Eliminates security review wait time for verified code (avg. 2–4 hours per MR in large orgs → 5 minutes with Argus)
+   - **Regressions prevented**: Mathematical proof catches classes of bugs that pattern-matching misses (negative balance, integer overflow, bounds violations)
+   - **Compliance acceleration**: Audit-ready artifacts (SARIF, JSON trace, Markdown reports) generated automatically — no manual evidence collection
+   - **Developer velocity**: Auto-repair for common vulnerability patterns means developers merge faster with higher confidence
+
+5. **Deployment model for enterprise**:
+   - **Phase 1 (Advisory)**: Argus runs on MRs but verdicts are informational only (labels + comments, no merge gate). Developers build trust by seeing accurate verdicts.
+   - **Phase 2 (Enforced)**: After calibration period, VULNERABLE verdict blocks merge. Exceptions require security lead approval.
+   - **Phase 3 (Extended)**: Custom obligation policies for organization-specific security properties. Integration with existing security dashboards.
+
+6. **UX validation checklist** (Gate E evidence):
+   - [ ] Mission Control dashboard communicates status/value to non-technical viewer in <45 seconds
+   - [ ] MR comment is immediately actionable — developer knows what to do without opening dashboard
+   - [ ] Verdict language is unambiguous — VERIFIED/FIXED/VULNERABLE/UNVERIFIED/ERROR have clear definitions
+   - [ ] Demo script tested with at least one non-engineer (or equivalent self-review for comprehension)
+   - [ ] Dashboard, MR comment, and Markdown report are internally consistent (same verdicts, same file counts)
+   - Evidence: screenshot pack showing dashboard, MR comment, and report for each demo scenario
+
+**`docs/pilot-proposal.md`** — 30-day pilot plan:
+
+1. **Pilot scope**:
+   - 1 GitLab project with 5–20 active developers
+   - Argus runs in advisory mode on all MRs to the default branch
+   - Target: 50+ MR scans during pilot
+   - Weekly sync with pilot champion to review verdicts and feedback
+
+2. **Success metrics**:
+   | Metric | Target | Measurement |
+   |---|---|---|
+   | True positive rate | >90% of VULNERABLE verdicts confirmed by developer | Developer feedback on MR comments |
+   | False positive rate | 0% of VERIFIED verdicts contradict known vulnerabilities | Comparison against known-vulnerable test corpus |
+   | Developer satisfaction | >70% would continue using Argus after pilot | End-of-pilot survey |
+   | Pipeline latency impact | <5 minutes added to MR pipeline | CI analytics comparison |
+   | Coverage | >80% of eligible Python files scanned | Argus report aggregation |
+
+3. **Pilot timeline**:
+   - **Week 0**: Installation, configuration, initial test run on demo scenarios
+   - **Week 1**: Advisory mode on real MRs; daily verdict review
+   - **Week 2**: Tune obligation sensitivity; address false positives (if any)
+   - **Week 3**: Expand to additional projects or branches
+   - **Week 4**: Pilot review meeting; go/no-go on enforced mode
+
+4. **What Argus needs from the pilot customer**:
+   - GitLab project with CI/CD enabled
+   - API key provisioning (Anthropic or Gemini)
+   - A designated pilot champion (developer or DevOps engineer)
+   - 30 minutes/week for feedback sync
+
+5. **What the pilot customer gets**:
+   - Full Argus deployment in advisory mode
+   - Configuration assistance
+   - Direct support channel during pilot
+   - Pilot report with verdict statistics, latency metrics, and ROI estimate
+
+**`docs/competitive-positioning.md`** — Competitive analysis one-pager:
+
+| Dimension | Traditional SAST (Semgrep, SonarQube) | AI Code Review (Copilot, CodeRabbit) | ArgusV2 |
+|---|---|---|---|
+| Detection method | Pattern matching / AST rules | LLM heuristics | **Formal mathematical proof** |
+| False positive rate | High (30–70% in practice) | Moderate (varies by model) | **Zero by construction** (proof-gated) |
+| False negative risk | High (only catches known patterns) | Moderate (depends on model training) | **Low** (proves properties, not patterns) |
+| Auto-repair | No | Suggestions (unverified) | **Verified repair** (re-proven by Lean 4) |
+| Audit trail | Scan report | Chat/comment history | **Full formal proof trace** (Lean 4 proof, obligations, assumptions) |
+| GitLab integration | Plugin/scanning job | MR comments | **Native agent + flow** (event-triggered, CI-integrated) |
+| Compliance evidence | Scan pass/fail | None | **SARIF + JSON + Markdown audit reports** with proof artifacts |
+| Trust model | Trust the scanner | Trust the AI | **Trust the math** (LLM is advisor only) |
+
+Key differentiator statement:
+> "Unlike pattern-matching SAST tools or AI code reviewers, ArgusV2 generates mathematical proofs of security properties. When Argus says code is safe, it's not a prediction — it's a proof. When it says code is vulnerable, it can show you the exact proof failure and a verified fix."
+
+**Acceptance**: All three docs are written from the perspective of a prospective enterprise customer. A VP of Engineering reading these docs should: (1) understand the product positioning, (2) see a clear pilot plan with measurable success criteria, (3) understand how Argus differs from existing tools. No marketing fluff — evidence-backed claims only.
+
+#### Step 5.5 — Demo integrity validation (Gate G)
+**New file**: `docs/demo-integrity-checklist.md`
+
+Prove that the demo is honest — no hardcoded bypasses, no manual intervention, no demo-only code paths. This is both an ethical requirement and a judging credibility signal.
+
+**Content**:
+
+1. **Production code path attestation**:
+   - Demo scenarios (`demo_target/*.py`) are audited by the same `ArgusPipeline` that processes real MR code
+   - No `if demo_mode:` conditionals or environment-based behavior changes
+   - CLI arguments used in demo (`--file`, `--allow-local-verify`, `--provider`) are the same arguments available in production CI
+   - Evidence: `grep -r "demo" src/` returns zero demo-specific code paths (document the grep output)
+
+2. **Seeded fixture transparency**:
+   - Demo scenarios are explicitly labeled as purpose-built examples in `demo_target/README.md`
+   - Scenarios are designed to exercise specific verdict paths (VERIFIED, FIXED, VULNERABLE) — this is documented, not hidden
+   - Benchmark corpus in `benchmarks/seeded/` is separate from demo scenarios and used only for automated testing
+   - Evidence: `demo_target/README.md` content + `benchmarks/seeded/manifest.json` content
+
+3. **No manual intervention required**:
+   - Demo run command: `python -m src.adapters.cli --file demo_target/<file>.py --allow-local-verify --provider anthropic`
+   - No setup beyond `export ANTHROPIC_API_KEY=...` and `pip install -r requirements.txt`
+   - No manual file editing, no database seeding, no prerequisite scripts
+   - Evidence: fresh terminal recording of demo run (or clean-environment validation in Step 5.11)
+
+4. **Backup asset provenance**:
+   - Backup artifacts in `demo_target/backup_artifacts/` are generated from real pipeline runs
+   - Run commands and commit hashes documented for each backup artifact set
+   - Backup artifacts match the demo version of the codebase (same commit)
+   - Evidence: documented commit hash + run command for each backup set
+
+5. **Reproducibility commands**:
+   ```bash
+   # Reproduce exact demo results (requires ANTHROPIC_API_KEY)
+   git checkout <commit-hash>
+   pip install -r requirements.txt
+   python -m src.adapters.cli --file demo_target/safe_transfer.py --allow-local-verify --provider anthropic
+   python -m src.adapters.cli --file demo_target/vulnerable_transfer.py --allow-local-verify --provider anthropic
+   python -m src.adapters.cli --file demo_target/drift_withdrawal.py --allow-local-verify --provider anthropic
+   ```
+
+**Acceptance**: A skeptical judge reading this document should be convinced that the demo represents real product behavior, not a choreographed illusion. All claims are backed by verifiable evidence (grep outputs, file paths, commit hashes).
+
+#### Step 5.6 — Production reliability gate closure (Gate A)
+**File**: Update `docs/reliability-report.md`
+
+Gate A requires quantitative evidence of reliability. Most of this evidence already exists from Phase 1 (20 repeated runs) and Phase 3 (9 Anthropic + 9 Gemini validation runs). This step consolidates and updates the evidence.
+
+**Updates to `docs/reliability-report.md`**:
+
+1. **Consolidated reliability metrics table**:
+   | Metric | Phase 1 Value | Phase 3 Value | Target | Status |
+   |---|---|---|---|---|
+   | End-to-end success rate | 100% (20 runs) | 100% (18 runs) | ≥95% | PASS |
+   | Verdict stability (safe files) | VERIFIED 100% | VERIFIED 100% | 100% | PASS |
+   | Verdict stability (vulnerable files) | VULNERABLE 100% | VULNERABLE/FIXED 100% | 100% | PASS |
+   | False VERIFIED rate | 0% | 0% | 0% | PASS |
+   | Test suite pass rate | 66/66 (Phase 1) | 136/136 (Phase 4) | 100% | PASS |
+   | Fail-closed scenarios | Validated | 14/14 passing | All pass | PASS |
+
+2. **Latency profile**:
+   - Document p50/p95 pipeline latency from existing validation runs
+   - Reference Anthropic vs Gemini latency delta from Phase 3 (1.9–8.4× faster)
+   - Target: full pipeline completes in <5 minutes for single-file audit
+
+3. **Retry and timeout behavior**:
+   - LLM provider: connection timeout handled by SDK defaults; pipeline fails closed on timeout
+   - Lean 4 verifier: per-file compilation timeout (configurable); defaults to ERROR on timeout
+   - Pipeline-level: no automatic retry (each CI run is a fresh execution); retry is GitLab's "Retry" button
+
+4. **Reference to existing evidence artifacts**:
+   - Phase 1: `artifacts/phase1/reliability-summary.json`, `artifacts/phase1/ci-gates.json`
+   - Phase 3: `artifacts/phase3/reliability-summary.json`, `artifacts/phase3/anthropic_r{1,2,3}_*.json`
+
+**Acceptance**: `docs/reliability-report.md` contains a consolidated metrics table that demonstrates ≥95% success rate across 30+ total runs, 0 false positives, and stable verdicts. All claims reference specific artifact files.
+
+#### Step 5.7 — CI/CD finalization and Dockerfile validation
+**Files**: Review `.gitlab-ci.yml`, `Dockerfile`, `requirements.txt`
+
+Final pass to ensure the CI/CD configuration and Docker build are production-ready.
+
+1. **`.gitlab-ci.yml` review**:
+   - Verify `argus-verify` job triggers correctly on MR events (`rules: - if: $CI_MERGE_REQUEST_IID`)
+   - Verify artifact names and paths are stable and match documentation
+   - Verify artifact retention policy is set (e.g., `expire_in: 30 days`)
+   - Confirm `allow_failure: false` for `argus-verify` (enforced, not advisory)
+   - Ensure image reference matches current Dockerfile build output
+
+2. **`Dockerfile` review**:
+   - Verify base image is pinned (not `latest`)
+   - Verify Lean 4 / elan is installed correctly
+   - Verify `requirements.txt` is installed
+   - Verify entrypoint/CMD is correct for CI execution
+   - Verify no secrets baked into image layers
+   - Test: `docker build -t argus:test .` completes without errors
+
+3. **`requirements.txt` review**:
+   - Verify all dependencies are present with version constraints
+   - Verify `anthropic>=0.40.0` is included (Phase 3)
+   - Verify no unused dependencies
+   - Verify no dependencies with known critical CVEs (quick check)
+
+4. **Environment variable contract freeze**:
+   - Cross-reference all `os.environ.get()` / `os.getenv()` calls in source code against `docs/deployment-guide.md` variable table
+   - Ensure every required variable is documented
+   - Ensure every documented variable is actually used in code
+
+**Acceptance**: `.gitlab-ci.yml` reflects final release workflow. `Dockerfile` builds cleanly and produces a working image. Environment variable contract is complete, frozen, and documented.
+
+#### Step 5.8 — Clean-environment end-to-end dry run
+**Evidence file**: Update `docs/install-validation.md` with results
+
+The first validation gate: start from a clean environment and follow the published docs to install, configure, and run Argus. This catches undocumented dependencies, missing setup steps, or implicit assumptions **before** investing time in video recording or screenshot capture.
+
+**Protocol**:
+
+1. **Environment setup**:
+   - Create a fresh Python virtualenv (or Docker container) with NO pre-existing Argus dependencies
+   - Clone the repository from the public GitLab URL (or use a fresh local clone)
+   - Do NOT refer to any knowledge not in the repository docs
+
+2. **Install following docs only**:
+   - Follow `docs/quickstart.md` or `docs/deployment-guide.md` — whichever claims to be the getting-started path
+   - Install dependencies: `pip install -r requirements.txt`
+   - Set environment variables: `ANTHROPIC_API_KEY`
+   - Note any step that fails or requires undocumented action
+
+3. **Run demo scenarios**:
+   ```bash
+   python -m src.adapters.cli --file demo_target/safe_transfer.py --allow-local-verify --provider anthropic
+   python -m src.adapters.cli --file demo_target/vulnerable_transfer.py --allow-local-verify --provider anthropic
+   python -m src.adapters.cli --file demo_target/drift_withdrawal.py --allow-local-verify --provider anthropic
+   ```
+   - Verify each produces the expected verdict (VERIFIED / FIXED or VULNERABLE / VULNERABLE)
+   - Verify all artifacts are generated (JSON, Markdown, SARIF, SAST, dashboard, trace)
+
+4. **Run test suite**:
+   ```bash
+   pytest tests/ -v
+   ```
+   - All 136+ tests must pass
+
+5. **Run CI integrity gates**:
+   ```bash
+   python -m src.adapters.cli --mode ci --repo-path . --allow-local-verify --provider anthropic
+   ```
+   - Verify CI gates pass
+
+6. **Generate backup artifacts with provenance**:
+   For each demo scenario, archive the pipeline output to `demo_target/backup_artifacts/<scenario>/`:
+   - `argus_report.json`, `argus_dashboard.html`, `Argus_Audit_Report.md`
+   - `.argus-trace/<run>/` (full trace)
+   - Create `demo_target/backup_artifacts/PROVENANCE.md` documenting: commit hash, run commands, timestamps, verdicts observed
+   - Commit these artifacts so they serve as offline fallback during video recording
+
+7. **Record results**:
+   - Document in `docs/install-validation.md`: environment details, every command run, every output observed, any issues encountered and how resolved
+   - Record wall-clock time from "clone" to "first successful run"
+   - Record total time to complete all validation steps
+
+**Pass/fail criteria**:
+- All 3 demo scenarios produce correct verdicts: PASS / FAIL
+- All artifacts generated: PASS / FAIL
+- Test suite passes (136+ tests): PASS / FAIL
+- No undocumented steps required: PASS / FAIL
+- Total install-to-first-run time < 15 minutes: PASS / FAIL
+- Backup artifacts generated with provenance: PASS / FAIL
+
+**If any step fails**: Fix the issue (update docs, fix code, add missing dependency) and re-run the dry run from the beginning. Do not proceed to Step 5.9 until the dry run passes cleanly.
+
+**Acceptance**: Clean-environment dry run passes all criteria. Results documented in `docs/install-validation.md`. Backup artifacts committed with provenance. Any fixes applied during dry run are committed.
+
+#### Step 5.9 — Screenshot and visual asset pack
+**Directory**: `docs/assets/`
+
+Capture screenshots and visual assets using the artifacts from the successful dry run (Step 5.8).
+
+**Required screenshots**:
+1. Mission Control dashboard showing a mixed-verdict run (VERIFIED + FIXED + VULNERABLE)
+2. GitLab MR with Argus comment posted (or simulated Markdown rendering)
+3. Terminal output showing pipeline execution
+4. Architecture diagram (already in `docs/architecture.md` — render to image if needed)
+
+**Process**:
+- Use artifacts generated during Step 5.8 dry run (known-good state)
+- Open `argus_dashboard.html` in browser → screenshot
+- Render MR comment Markdown in a viewer → screenshot
+- Save to `docs/assets/` with descriptive filenames
+
+**Acceptance**: At least 3 screenshots captured showing dashboard, MR comment, and terminal execution. Screenshots are high-resolution and readable. No sensitive data (API keys, real customer code) visible.
+
+#### Step 5.10 — Demo video recording
+**Inputs**: `docs/demo-script.md`, demo scenarios, screenshot pack, verified dry-run setup from Step 5.8
+
+Record the 3-minute demo video following the locked script from Phase 4. Use the same environment that passed the dry run — this guarantees the demo works.
+
+**Recording approach**:
+1. Set up screen recording (QuickTime / OBS / Loom)
+2. Prepare terminal with demo commands ready (same commands that passed Step 5.8)
+3. Follow `docs/demo-script.md` segment by segment
+4. Record voiceover narration (or add post-recording)
+5. Add text overlays for key concepts ("Claude proposes, Lean disposes")
+6. Export as MP4, upload to YouTube/Vimeo (unlisted or public)
+
+**Backup strategy**:
+- If live demo encounters API issues: use backup artifacts from `demo_target/backup_artifacts/` (generated in Step 5.8)
+- If recording is too long: cut Segment 5 (UX walkthrough) to 15 seconds instead of 30
+- If voiceover quality is poor: use text overlays with background music instead
+
+**Video specifications**:
+- Duration: ≤3 minutes
+- Resolution: 1080p minimum
+- Format: MP4 for upload, platform-native for hosting
+- Hosting: YouTube (unlisted) or Vimeo (public)
+
+**Acceptance**: Video exists at a public URL. Video follows the script from `docs/demo-script.md`. Duration is ≤3 minutes. All 6 segments are covered. Video demonstrates: problem → trigger → detection → repair → UX → close.
+
+#### Step 5.11 — Devpost submission packaging
+**Files**: Update `docs/submission-text.md`, prepare Devpost submission
+
+1. **Finalize submission text** (`docs/submission-text.md`):
+   - Verify all sections are complete: inspiration, what it does, how we built it, challenges, accomplishments, what we learned, what's next
+   - Verify Anthropic prize positioning paragraph is present
+   - Verify custom agent/flow requirement is explicitly called out
+   - Add video link (from Step 5.10)
+   - Add screenshots (from Step 5.9)
+
+2. **Repository visibility checklist**:
+   - [ ] Repository is in the GitLab AI Hackathon group
+   - [ ] Repository visibility is set to Public
+   - [ ] Default branch (`main`) contains all flow files (`.gitlab/duo/flows/argus_verify.yml`)
+   - [ ] `LICENSE` file is present and visible on repo page
+   - [ ] No exposed secrets in committed code (grep for API key patterns)
+   - [ ] `.gitignore` excludes `.env`, `*.key`, credential files
+
+3. **Devpost submission fields**:
+   - Project name: ArgusV2
+   - Tagline: "The Trust Layer for AI-Accelerated Software Delivery"
+   - Video URL: (from Step 5.10)
+   - Repository URL: GitLab project URL
+   - Description: (from `docs/submission-text.md`)
+   - Built with: Python, Anthropic Claude, Lean 4, Dafny, GitLab CI/CD, Docker
+   - Categories: Custom Agents & Flows (primary), Anthropic Grand Prize (secondary)
+
+**Acceptance**: Devpost submission is complete with all required fields. Repository is publicly accessible. No secrets exposed. Video is linked and accessible. All submission checklist items from Section 10 are checked.
+
+#### Step 5.12 — Final Go/No-Go checklist
+**File**: Update `docs/FINAL_PLAN_PROGRESS.md` with Phase 5 status
+
+Execute the final Go/No-Go decision by checking every gate and checklist item.
+
+**Submission checklist (Section 10)**:
+- [ ] Public GitLab repository in GitLab AI Hackathon group
+- [ ] Visible OSS license on repo page
+- [ ] Full source code + assets + run instructions
+- [ ] Text description on Devpost submission
+- [ ] Public YouTube/Vimeo demo video
+- [ ] At least one custom public agent or public flow explicitly documented
+- [ ] Judging alignment explicitly addressed in submission text
+- [ ] Anthropic impact narrative included
+
+**Code completion checklist (Section 9)**:
+- [ ] Triggered execution from GitLab push/MR works reliably
+- [ ] Full loop executes: verify → diagnose → repair → re-verify
+- [ ] Fail-closed verdict behavior validated on all known edge paths
+- [ ] Trace artifacts generated for all outcomes
+- [ ] Agent/flow config files valid and documented
+- [ ] Public custom agent/flow demonstrated
+- [ ] README includes "Custom Public Agent / Flow" proof section
+- [ ] Provider abstraction merged with Anthropic default
+- [ ] Anthropic mode in demo-critical path
+- [ ] Provider provenance visible in artifacts
+- [ ] MR summary concise, actionable, and readable
+- [ ] Audit report includes technical + executive summary
+- [ ] Mission Control page works and highlights value
+- [ ] `.gitlab-ci.yml` reflects final workflow
+- [ ] Artifact names/retention stable
+- [ ] Deployment quickstart works from clean environment
+
+**Launch Readiness Gates (Section 14)**:
+- [ ] **Gate A** — Production Reliability: ≥95% success rate, stable verdicts, 0 false positives → Evidence: `docs/reliability-report.md`
+- [ ] **Gate B** — Security & Governance: secret handling, data policy, fail-closed validated → Evidence: `docs/security-posture.md`, `docs/data-handling-policy.md`
+- [ ] **Gate C** — Deployability: fresh install validated, env contract frozen → Evidence: `docs/deployment-guide.md`, `docs/install-validation.md`
+- [ ] **Gate D** — Operability: monitoring points, runbooks, troubleshooting → Evidence: `docs/ops-runbook.md`, `docs/troubleshooting.md`
+- [ ] **Gate E** — UX Quality: dashboard/MR/reports clear and consistent → Evidence: `docs/enterprise-readiness.md` (UX validation section), screenshot pack
+- [ ] **Gate F** — Commercial Readiness: ICP, pilot plan, ROI, competitive positioning → Evidence: `docs/enterprise-readiness.md`, `docs/pilot-proposal.md`, `docs/competitive-positioning.md`
+- [ ] **Gate G** — Demo Integrity: no shortcuts, reproducible, backup assets from real runs → Evidence: `docs/demo-integrity-checklist.md`
+
+**Definition of Done (Section 13)**:
+- [ ] Autonomous and triggered (not chat-only)
+- [ ] Proof-gated and fail-closed (trusted outcomes)
+- [ ] Readable and usable (developer + judge comprehension)
+- [ ] Public requirement-compliant (agent/flow + repo + video + docs)
+- [ ] Commercially credible (deployment + governance + pilot narrative)
+
+**Go/No-Go decision**:
+- All green → **GO**: Submit to Devpost, publish video, make repo public
+- Any red → **NO-GO**: Fix blocking items, re-run affected validation, re-assess
+
+**Acceptance**: All checklist items are green. `docs/FINAL_PLAN_PROGRESS.md` is updated with Phase 5 completion status and evidence links. Devpost submission is live. Video is published. Repo is public. ArgusV2 is both submission-grade and startup-grade.
+
+### Deliverables summary
+| # | Deliverable | File(s) | New/Modified |
+|---|---|---|---|
+| 5.1 | Security & governance docs | `docs/security-posture.md`, `docs/data-handling-policy.md` | New |
+| 5.2 | Deployment guide & install validation | `docs/deployment-guide.md`, `docs/install-validation.md` | New |
+| 5.3 | Operations & troubleshooting | `docs/ops-runbook.md`, `docs/troubleshooting.md` | New |
+| 5.4 | Enterprise & commercial docs | `docs/enterprise-readiness.md`, `docs/pilot-proposal.md`, `docs/competitive-positioning.md` | New |
+| 5.5 | Demo integrity checklist | `docs/demo-integrity-checklist.md` | New |
+| 5.6 | Reliability gate closure | `docs/reliability-report.md` | Modified |
+| 5.7 | CI/CD and Dockerfile finalization | `.gitlab-ci.yml`, `Dockerfile`, `requirements.txt` | Modified (if needed) |
+| 5.8 | Clean-environment dry run + backup artifacts | `docs/install-validation.md`, `demo_target/backup_artifacts/` | New + Modified |
+| 5.9 | Screenshot and visual asset pack | `docs/assets/*.png` | New |
+| 5.10 | Demo video (3-minute) | External (YouTube/Vimeo) | New |
+| 5.11 | Devpost submission package | `docs/submission-text.md` | Modified |
+| 5.12 | Go/No-Go checklist closure | `docs/FINAL_PLAN_PROGRESS.md` | Modified |
 
 ### Acceptance criteria
-- All submission checklist items complete
-- All Launch Readiness gates green with linked evidence
-- Final dry run succeeds end-to-end on clean setup
+- [ ] `docs/security-posture.md` covers trust model, secret handling, access control, fail-closed guarantees, supply chain security, and known limitations
+- [ ] `docs/data-handling-policy.md` covers data flow, retention, prompt content policy, and compliance considerations
+- [ ] `docs/deployment-guide.md` covers 3 deployment options (GitLab CI, Docker, local CLI) with env var reference and runner resource recommendations
+- [ ] `docs/ops-runbook.md` covers monitoring points, top 4 incident response procedures, routine maintenance, and support SLA
+- [ ] `docs/troubleshooting.md` maps 10+ symptoms to fixes
+- [ ] `docs/enterprise-readiness.md` covers ICP, buyer personas, ROI narrative, deployment model, and UX validation checklist
+- [ ] `docs/pilot-proposal.md` defines a 30-day pilot with 5 measurable success metrics
+- [ ] `docs/competitive-positioning.md` provides evidence-backed comparison against SAST and AI review tools
+- [ ] `docs/demo-integrity-checklist.md` proves demo uses production code paths with no manual intervention
+- [ ] `docs/reliability-report.md` updated with consolidated metrics from all phases (30+ runs, 0 false positives)
+- [ ] `.gitlab-ci.yml` and `Dockerfile` are validated and match documentation
+- [ ] Screenshot pack exists in `docs/assets/` with dashboard, MR comment, and terminal screenshots
+- [ ] Demo video recorded, uploaded, and publicly accessible (≤3 minutes)
+- [ ] Devpost submission is complete with all required fields
+- [ ] Repository is public with visible license and no exposed secrets
+- [ ] Clean-environment dry run passes: correct verdicts, all artifacts generated, test suite passes, no undocumented steps
+- [ ] All Launch Readiness Gates A–G are green with linked evidence documents
+- [ ] `docs/FINAL_PLAN_PROGRESS.md` updated with Phase 5 completion status
 
 ### Evidence for review
-- Devpost draft submission text
-- Checklist completion matrix
-- Gate evidence docs (`docs/*.md`) and final run logs
+- Enterprise docs: `docs/security-posture.md`, `docs/data-handling-policy.md`, `docs/deployment-guide.md`, `docs/ops-runbook.md`, `docs/troubleshooting.md`, `docs/enterprise-readiness.md`, `docs/pilot-proposal.md`, `docs/competitive-positioning.md`
+- Gate evidence: `docs/demo-integrity-checklist.md`, `docs/install-validation.md`, `docs/reliability-report.md` (updated)
+- Visual assets: `docs/assets/` screenshot pack
+- Demo video: public URL
+- Devpost: submission URL
+- Dry run: `docs/install-validation.md` with documented results
+- Final checklist: `docs/FINAL_PLAN_PROGRESS.md` (Phase 5 section)
+
+### What does NOT change in Phase 5
+These files/components are explicitly out of scope:
+- All `src/` source code — Phase 5 produces documentation and validation only; no code changes unless the dry run reveals a bug
+- `tests/` — no new tests added (Phase 4 brought the suite to 136; Phase 5 validates that they pass in clean environment)
+- `benchmarks/seeded/` — benchmark corpus unchanged
+- `demo_target/*.py` — demo scenarios unchanged (backup artifacts may be regenerated)
+- `config.yml`, `.gitlab/duo/agent-config.yml`, `.gitlab/duo/flows/argus_verify.yml` — agent/flow definitions unchanged
+- Core pipeline logic — zero modifications to verification, translation, obligation, verdict, or enforcement code
+
+### Security and compliance note
+- All enterprise docs must be accurate representations of actual system behavior — no aspirational claims presented as current capabilities
+- `docs/security-posture.md` must honestly document known limitations (e.g., no at-rest encryption for trace artifacts)
+- `docs/data-handling-policy.md` must accurately state that source code is sent to the configured LLM provider
+- Screenshot pack must not contain any API keys, tokens, or real customer data
+- Devpost submission must not expose credentials or internal infrastructure details
+- Demo video must not show API keys or sensitive environment variables
+
+### Risks specific to Phase 5
+| Risk | Impact | Mitigation |
+|---|---|---|
+| Clean-environment install fails | Blocks submission — can't demonstrate working product | Run dry run early (Step 5.11); fix before demo recording |
+| Demo video takes too long to record/edit | Misses submission deadline | Use simple screen recording (QuickTime); text overlays > professional editing; have backup plan with screenshots only |
+| Enterprise docs feel artificial / thin | Undermines commercial credibility | Write from real sales scenarios; reference actual product capabilities; include concrete metrics from validation runs |
+| LLM provider is down during dry run or recording | Can't produce demo evidence | Use backup artifacts from `demo_target/backup_artifacts/`; record during off-peak hours; have Gemini as fallback |
+| Devpost platform issues | Can't submit on time | Prepare submission locally in `docs/submission-text.md`; submit early (don't wait until deadline) |
+| Repo visibility misconfigured | Judges can't access code | Verify public access from incognito browser before submitting |
+| Screenshots contain sensitive data | Security/privacy risk | Review every screenshot before committing; use demo data only |
 
 ---
 
