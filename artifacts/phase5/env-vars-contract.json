@@ -1,0 +1,13 @@
+{
+  "used_env_vars": [
+    "ANTHROPIC_API_KEY",
+    "ARGUS_ALLOW_LOCAL_VERIFY",
+    "CI_COMMIT_SHA",
+    "CI_MERGE_REQUEST_IID",
+    "CI_PROJECT_ID",
+    "CI_SERVER_URL",
+    "GEMINI_API_KEY",
+    "GITLAB_TOKEN",
+    "LLM_PROVIDER"
+  ]
+}

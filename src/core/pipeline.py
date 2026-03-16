@@ -80,6 +80,14 @@ class ArgusPipeline:
         self._original_code: Dict[str, str] = {}
         self._repaired_code: Dict[str, str] = {}
 
+    @property
+    def original_code_map(self) -> Dict[str, str]:
+        return dict(self._original_code)
+
+    @property
+    def repaired_code_map(self) -> Dict[str, str]:
+        return dict(self._repaired_code)
+
     def run_file(self, filename: str, python_code: str) -> PipelineResult:
         run_id = self._new_run_id()
         self.last_run_id = run_id

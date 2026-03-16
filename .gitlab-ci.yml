@@ -34,6 +34,7 @@ argus-verify:
     - python -m src.adapters.cli --repo-path . --mode ci --base-ref "${CI_MERGE_REQUEST_DIFF_BASE_SHA:-}"
   artifacts:
     when: always
+    expire_in: 30 days
     reports:
       sast: gl-sast-report.json
     paths:

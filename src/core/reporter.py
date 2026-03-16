@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import difflib
 import hashlib
 import json
 from dataclasses import dataclass
@@ -364,15 +365,15 @@ def render_mr_comment(
                 lines.append("<details>")
                 lines.append("<summary>View repair diff</summary>")
                 lines.append("")
-                orig_lines_set = set(orig.splitlines())
-                rep_lines_set = set(rep.splitlines())
-                diff_lines = []
-                for ln in orig.splitlines():
-                    if ln not in rep_lines_set:
-                        diff_lines.append(f"- {ln}")
-                for ln in rep.splitlines():
-                    if ln not in orig_lines_set:
-                        diff_lines.append(f"+ {ln}")
+                diff_lines = list(
+                    difflib.unified_diff(
+                        orig.splitlines(),
+                        rep.splitlines(),
+                        fromfile=f"{item.filename} (original)",
+                        tofile=f"{item.filename} (repaired)",
+                        lineterm="",
+                    )
+                )
                 if diff_lines:
                     lines.append("```diff")
                     lines.extend(diff_lines)
@@ -579,13 +580,13 @@ def render_gitlab_sast_report(files: List[FileReport]) -> Dict[str, Any]:
             "analyzer": {
                 "id": "argus-v2",
                 "name": "ArgusV2",
-                "version": "2.0.0",
+                "version": "2.1.0",
                 "vendor": {"name": "Argus"},
             },
             "scanner": {
                 "id": "argus-v2",
                 "name": "ArgusV2",
-                "version": "2.0.0",
+                "version": "2.1.0",
                 "vendor": {"name": "Argus"},
             },
         },

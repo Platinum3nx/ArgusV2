@@ -188,9 +188,30 @@ Stabilize end-to-end autonomous behavior so outcomes are deterministic, fail-clo
 ---
 
 ## Phase 5 — Submission Packaging & Launch Readiness
-**Status:** NOT STARTED (in this pass)
+**Status:** IN PROGRESS (implementation advanced; external submission steps pending)
 
-### Planned work
-- [ ] Complete launch-readiness gates A–G with linked evidence docs.
-- [ ] Final clean-environment install + dry-run validation.
-- [ ] Final submission packaging and checklist closure.
+### Execution status
+- [x] Gate B docs created: `docs/security-posture.md`, `docs/data-handling-policy.md`
+- [x] Gate C docs created: `docs/deployment-guide.md`, `docs/install-validation.md`
+- [x] Gate D docs created: `docs/ops-runbook.md`, `docs/troubleshooting.md`
+- [x] Gates E/F docs created: `docs/enterprise-readiness.md`, `docs/pilot-proposal.md`, `docs/competitive-positioning.md`
+- [x] Gate G doc created: `docs/demo-integrity-checklist.md`
+- [x] Release-hardening updates applied:
+  - public pipeline API maps exposed (`original_code_map`, `repaired_code_map`)
+  - CLI no longer depends on private pipeline attrs
+  - GitLab SAST analyzer/scanner version metadata unified to `2.1.0`
+- [x] Reliability report consolidated for Phase 5: `docs/reliability-report.md`
+- [x] Large-MR stress artifacts generated:
+  - `artifacts/phase5/mr-comment-stress.json` (within GitLab comment limit)
+  - `artifacts/phase5/stress_dashboard.html`
+- [x] Environment variable contract enumerated from source:
+  - `artifacts/phase5/env-vars-contract.json`
+- [x] Demo backup provenance scaffold added: `demo_target/backup_artifacts/PROVENANCE.md`
+- [ ] Provider-backed end-to-end demo runs in this environment (blocked by missing API keys)
+- [ ] Screenshot pack capture (`docs/assets/*.png`)
+- [ ] Demo video recording/upload and Devpost final submission URLs
+
+### Evidence links
+- Docs: `docs/security-posture.md`, `docs/data-handling-policy.md`, `docs/deployment-guide.md`, `docs/install-validation.md`, `docs/ops-runbook.md`, `docs/troubleshooting.md`, `docs/enterprise-readiness.md`, `docs/pilot-proposal.md`, `docs/competitive-positioning.md`, `docs/demo-integrity-checklist.md`, `docs/reliability-report.md`
+- Stress artifacts: `artifacts/phase5/mr-comment-stress.json`, `artifacts/phase5/stress_dashboard.html`
+- Visual pack scaffold: `docs/assets/README.md`

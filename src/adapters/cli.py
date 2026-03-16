@@ -90,9 +90,9 @@ def main() -> int:
     prov = llm_client.provider_name
     mdl = llm_client.model_id
 
-    # Collect code dicts from pipeline for enhanced reports
-    original_code = pipeline._original_code
-    repaired_code = pipeline._repaired_code
+    # Collect code dicts from pipeline public API for enhanced reports
+    original_code = pipeline.original_code_map
+    repaired_code = pipeline.repaired_code_map
 
     # Standard machine-readable artifacts (format unchanged)
     json_payload = render_json_report(reports, provider=prov, model=mdl)

@@ -1,5 +1,13 @@
 # Devpost Submission Snippet
 
+## Final packaging checklist (Phase 5)
+- Video URL: `<ADD_YOUTUBE_OR_VIMEO_URL>`
+- Devpost URL: `<ADD_DEVPOST_SUBMISSION_URL>`
+- Public repo URL: `https://gitlab.com/Platinum3nx/ArgusV2`
+- Primary category: Custom Agents & Flows
+- Secondary category: Anthropic Impact Track
+
+
 ## Custom Public Agent / Flow
 ArgusV2 includes a custom public GitLab Duo agent (**Argus Verified Repair**) and a public event-driven flow for merge requests.
 

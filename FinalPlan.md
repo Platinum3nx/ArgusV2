@@ -1683,7 +1683,7 @@ These are the two most important enterprise documents. Any serious buyer will as
    | Linux (x86_64) | 3.11+ | Ubuntu 22.04+ | Docker CE | Target | CI runner environment |
    | GitLab SaaS Runner | 3.11+ | Linux | Docker executor | Target | Production deployment |
 
-3. **Test results**: (to be filled during Step 5.11 execution)
+3. **Test results**: (to be filled during Step 5.8 execution)
 
 **Acceptance**: A developer who has never seen ArgusV2 can follow `docs/deployment-guide.md` and get a working pipeline producing correct verdicts within 15 minutes. Environment variable contract is complete and matches actual code. `docs/install-validation.md` contains protocol for reproducible validation.
 
@@ -1880,7 +1880,7 @@ Prove that the demo is honest — no hardcoded bypasses, no manual intervention,
    - Demo run command: `python -m src.adapters.cli --file demo_target/<file>.py --allow-local-verify --provider anthropic`
    - No setup beyond `export ANTHROPIC_API_KEY=...` and `pip install -r requirements.txt`
    - No manual file editing, no database seeding, no prerequisite scripts
-   - Evidence: fresh terminal recording of demo run (or clean-environment validation in Step 5.11)
+   - Evidence: fresh terminal recording of demo run (or clean-environment validation in Step 5.8)
 
 4. **Backup asset provenance**:
    - Backup artifacts in `demo_target/backup_artifacts/` are generated from real pipeline runs
@@ -1964,7 +1964,12 @@ Final pass to ensure the CI/CD configuration and Docker build are production-rea
    - Ensure every required variable is documented
    - Ensure every documented variable is actually used in code
 
-**Acceptance**: `.gitlab-ci.yml` reflects final release workflow. `Dockerfile` builds cleanly and produces a working image. Environment variable contract is complete, frozen, and documented.
+5. **Release-hardening consistency checks**:
+   - Version metadata consistency across all emitted artifacts (JSON, SARIF, GitLab SAST, Markdown, README/docs)
+   - Public API hygiene: eliminate consumer dependence on private pipeline attributes (e.g., `_original_code`, `_repaired_code`) by exposing a stable public surface
+   - Validate no stale references to pre-Phase-3 provider assumptions remain in docs or outputs
+
+**Acceptance**: `.gitlab-ci.yml` reflects final release workflow. `Dockerfile` builds cleanly and produces a working image. Environment variable contract is complete, frozen, and documented. Version metadata is consistent and reporter/CLI integration does not depend on private pipeline internals.
 
 #### Step 5.8 — Clean-environment end-to-end dry run
 **Evidence file**: Update `docs/install-validation.md` with results
@@ -2005,14 +2010,20 @@ The first validation gate: start from a clean environment and follow the publish
    ```
    - Verify CI gates pass
 
-6. **Generate backup artifacts with provenance**:
+6. **Large-MR stress validation (Phase 4 hardening carryover)**:
+   - Execute Argus against a multi-file sample set (target: 25+ Python files, or closest realistic proxy available)
+   - Validate MR comment remains under GitLab note limit (65,535 chars) and preserves actionable sections when large
+   - Validate dashboard render remains usable (loads and expands cards without browser errors)
+   - Record stress-run outputs and any truncation/perf notes in `docs/install-validation.md`
+
+7. **Generate backup artifacts with provenance**:
    For each demo scenario, archive the pipeline output to `demo_target/backup_artifacts/<scenario>/`:
    - `argus_report.json`, `argus_dashboard.html`, `Argus_Audit_Report.md`
    - `.argus-trace/<run>/` (full trace)
    - Create `demo_target/backup_artifacts/PROVENANCE.md` documenting: commit hash, run commands, timestamps, verdicts observed
    - Commit these artifacts so they serve as offline fallback during video recording
 
-7. **Record results**:
+8. **Record results**:
    - Document in `docs/install-validation.md`: environment details, every command run, every output observed, any issues encountered and how resolved
    - Record wall-clock time from "clone" to "first successful run"
    - Record total time to complete all validation steps
@@ -2023,6 +2034,7 @@ The first validation gate: start from a clean environment and follow the publish
 - Test suite passes (136+ tests): PASS / FAIL
 - No undocumented steps required: PASS / FAIL
 - Total install-to-first-run time < 15 minutes: PASS / FAIL
+- Large-MR stress validation passes (comment limit + dashboard usability): PASS / FAIL
 - Backup artifacts generated with provenance: PASS / FAIL
 
 **If any step fails**: Fix the issue (update docs, fix code, add missing dependency) and re-run the dry run from the beginning. Do not proceed to Step 5.9 until the dry run passes cleanly.
@@ -2205,7 +2217,7 @@ Execute the final Go/No-Go decision by checking every gate and checklist item.
 
 ### What does NOT change in Phase 5
 These files/components are explicitly out of scope:
-- All `src/` source code — Phase 5 produces documentation and validation only; no code changes unless the dry run reveals a bug
+- Core `src/` feature scope — Phase 5 is documentation/validation-first; only targeted release-hardening code fixes are allowed (e.g., metadata consistency, public API cleanup, or defects found during Step 5.7/5.8 validation)
 - `tests/` — no new tests added (Phase 4 brought the suite to 136; Phase 5 validates that they pass in clean environment)
 - `benchmarks/seeded/` — benchmark corpus unchanged
 - `demo_target/*.py` — demo scenarios unchanged (backup artifacts may be regenerated)
@@ -2223,7 +2235,7 @@ These files/components are explicitly out of scope:
 ### Risks specific to Phase 5
 | Risk | Impact | Mitigation |
 |---|---|---|
-| Clean-environment install fails | Blocks submission — can't demonstrate working product | Run dry run early (Step 5.11); fix before demo recording |
+| Clean-environment install fails | Blocks submission — can't demonstrate working product | Run dry run early (Step 5.8); fix before demo recording |
 | Demo video takes too long to record/edit | Misses submission deadline | Use simple screen recording (QuickTime); text overlays > professional editing; have backup plan with screenshots only |
 | Enterprise docs feel artificial / thin | Undermines commercial credibility | Write from real sales scenarios; reference actual product capabilities; include concrete metrics from validation runs |
 | LLM provider is down during dry run or recording | Can't produce demo evidence | Use backup artifacts from `demo_target/backup_artifacts/`; record during off-peak hours; have Gemini as fallback |

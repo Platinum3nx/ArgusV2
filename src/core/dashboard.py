@@ -582,14 +582,16 @@ def _render_timeline(summary: Dict[str, Any]) -> str:
     parts = []
     for i, (icon, name, desc, active) in enumerate(stages):
         box_class = "stage-box" + ("" if active else " skipped")
+        style_attr = " style='border-color:var(--verified)'" if active else ""
+        arrow_html = "<div class='stage-arrow'>→</div>" if i < len(stages) - 1 else ""
         parts.append(
             f"<div class='stage'>"
-            f"<div class='{box_class}' {'style=\"border-color:var(--verified)\"' if active else ''}>"
+            f"<div class='{box_class}'{style_attr}>"
             f"<div class='stage-icon'>{icon}</div>"
             f"<div class='stage-name'>{name}</div>"
             f"<div class='stage-desc'>{desc}</div>"
             f"</div>"
-            f"{'<div class=\"stage-arrow\">→</div>' if i < len(stages) - 1 else ''}"
+            f"{arrow_html}"
             f"</div>"
         )
     return "".join(parts)
