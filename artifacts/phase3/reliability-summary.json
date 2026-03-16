@@ -29,7 +29,7 @@
       "benchmarks/seeded/drift/uniqueness_probe.py": {
         "expected": "VULNERABLE",
         "run_1": "VULNERABLE",
-        "run_2": "pending (background job)",
+        "run_2": "VULNERABLE",
         "run_3": "VULNERABLE",
         "stable": true,
         "false_positive": false
@@ -37,7 +37,7 @@
     },
     "verdict_stability_safe": "100% (3/3 runs VERIFIED)",
     "verdict_stability_vuln": "100% (3/3 runs FIXED — vulnerability consistently detected and repaired)",
-    "verdict_stability_drift": "100% across 2 confirmed runs (VULNERABLE)",
+    "verdict_stability_drift": "100% (3/3 runs VULNERABLE)",
     "false_positives_safe_as_vulnerable": 0,
     "false_positives_vulnerable_as_verified": 0,
     "provenance_confirmed": {
