@@ -25,11 +25,8 @@ environment_contract:
     - CI_PROJECT_ID
     - CI_MERGE_REQUEST_IID
     - CI_SERVER_URL
-    - ANTHROPIC_API_KEY
   optional:
     - GITLAB_TOKEN
-    - GEMINI_API_KEY
-    - LLM_PROVIDER
     - ARGUS_ALLOW_LOCAL_VERIFY
 
 resources:

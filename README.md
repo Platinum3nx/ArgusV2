@@ -77,23 +77,19 @@ ArgusV2 satisfies the GitLab hackathon "custom public agent or public flow" requ
 
 ## Quick Start
 
-**30-second local test** (no GitLab needed):
+**30-second local test** (no GitLab needed, no API key required):
 
 ```bash
 # 1. Clone and install
 git clone <repo-url> && cd ArgusV2
 pip install -r requirements.txt
 
-# 2. Set your API key
-export ANTHROPIC_API_KEY=<your-key>
-
-# 3. Audit a vulnerable file
+# 2. Audit a vulnerable file (no API key needed — uses hosted proxy)
 python -m src.adapters.cli \
   --file demo_target/vulnerable_transfer.py \
-  --allow-local-verify \
-  --provider anthropic
+  --allow-local-verify
 
-# 4. Open the dashboard
+# 3. Open the dashboard
 open argus_dashboard.html   # macOS
 # or: xdg-open argus_dashboard.html  (Linux)
 ```
@@ -102,7 +98,7 @@ open argus_dashboard.html   # macOS
 
 ```bash
 # 1. Fork into GitLab AI Hackathon group
-# 2. Set CI/CD variables: ANTHROPIC_API_KEY, GITLAB_TOKEN
+# 2. Set CI/CD variable: GITLAB_TOKEN
 # 3. Push a Python file change → MR auto-triggers argus-verify
 ```
 
@@ -123,9 +119,7 @@ ArgusV2 uses **Anthropic Claude** (`claude-sonnet-4-6`) as its primary reasoning
 
 **Key design principle**: Claude proposes — Lean disposes. Every Claude output is validated by the formal verifier. False positives (false VERIFIED verdicts) are impossible by construction.
 
-**Provider options**: `--provider anthropic` (default) or `--provider gemini`
-
-**Fail-closed**: Missing `ANTHROPIC_API_KEY` → `ConfigurationError` at startup. No silent degradation.
+**Zero-config**: LLM calls go through a hosted proxy — no local API key required.
 
 **Provenance**: Every trace artifact records `provider` and `model` for full auditability.
 
@@ -176,7 +170,7 @@ Three pre-built scenarios in `demo_target/`:
 │   │   ├── pipeline.py              # ArgusPipeline orchestrator
 │   │   ├── dashboard.py             # Mission Control HTML generator (Phase 4)
 │   │   ├── reporter.py              # JSON / Markdown / SARIF / MR comment renderers
-│   │   ├── llm_provider.py          # Provider contract (Anthropic/Gemini abstraction)
+│   │   ├── llm_provider.py          # Anthropic LLM client
 │   │   ├── obligation_policy.py     # Deterministic obligation derivation
 │   │   ├── invariant_discovery.py   # Claude-powered obligation discovery
 │   │   ├── proof_search.py          # Claude-powered Lean proof repair
@@ -191,10 +185,20 @@ Three pre-built scenarios in `demo_target/`:
 ├── demo_target/                     # Demo scenarios with pre-generated backup artifacts
 ├── docs/
 │   ├── quickstart.md                # Fork-to-action walkthrough
-│   ├── submission-text.md           # Devpost requirement language + judge FAQ
+│   ├── deployment-guide.md          # 3 deployment options (GitLab CI, Docker, local CLI)
+│   ├── submission-text.md           # Devpost submission text + judge FAQ
 │   ├── demo-script.md               # 3-minute demo script with timestamps
 │   ├── architecture.md              # Full architecture diagrams
-│   └── reliability-report.md        # Phase 1 reliability evidence
+│   ├── reliability-report.md        # Consolidated reliability evidence (30+ runs)
+│   ├── security-posture.md          # Trust model, secret handling, access control
+│   ├── data-handling-policy.md      # Data flow, retention, prompt policy, compliance
+│   ├── ops-runbook.md               # Monitoring, incident response, maintenance
+│   ├── troubleshooting.md           # Symptom-to-fix guide (15+ scenarios)
+│   ├── enterprise-readiness.md      # ICP, buyer personas, deployment model, UX validation
+│   ├── pilot-proposal.md            # 30-day pilot plan with success metrics
+│   ├── competitive-positioning.md   # vs SAST and AI review tools
+│   ├── demo-integrity-checklist.md  # Proof that demo uses production code paths
+│   └── install-validation.md        # Clean-environment test protocol + results
 ├── config.yml                       # Public agent identity, tools, triggers, actions
 ├── Dockerfile
 └── requirements.txt
@@ -210,9 +214,7 @@ Three pre-built scenarios in `demo_target/`:
 | Anthropic end-to-end validation runs | **9/9** (3 files × 3 runs) |
 | False positives | **0** |
 | Verdict stability | **100%** (same result across repeated runs) |
-| Gemini backward-compat | **9/9** (same verdicts) |
 | Fail-closed scenarios tested | **14/14** |
-| Anthropic latency advantage | **1.9–8.4× faster** than Gemini baseline |
 
 ---
 
