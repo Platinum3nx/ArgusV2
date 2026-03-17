@@ -6,8 +6,8 @@ import requests
 # ---------------------------------------------------------------------------
 # Proxy configuration
 # ---------------------------------------------------------------------------
-PROXY_URL = "https://argus-proxy.onrender.com"
-PROXY_TOKEN = "argus-shared-secret-token"
+PROXY_URL = "https://argusv2-0.onrender.com/"
+PROXY_TOKEN = "secret-token-argus"
 
 
 class ConfigurationError(Exception):
