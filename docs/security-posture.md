@@ -7,7 +7,7 @@ Argus uses a **prove-before-trust** model:
 - Verdicts are fail-closed: verifier/runtime errors cannot produce VERIFIED.
 
 ## Secret handling
-- `ANTHROPIC_API_KEY`, `GEMINI_API_KEY`, `GITLAB_TOKEN` must be provided via CI/CD masked variables.
+- `ARGUS_PROXY_TOKEN` and `GITLAB_TOKEN` must be provided via CI/CD masked variables.
 - Secrets are never committed to the repo and are excluded from generated artifacts.
 - Tokens can be rotated without data migration.
 - Docker image contains no baked credentials.

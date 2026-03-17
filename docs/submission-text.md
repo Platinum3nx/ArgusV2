@@ -40,7 +40,7 @@ ArgusV2 uses **Anthropic Claude** as its primary LLM reasoning engine across all
 
 **Provenance**: Every trace artifact (`manifest.json`, per-file `result.json`) records `provider` and `model` fields so the reasoning chain is fully auditable.
 
-**Fail-closed**: Missing `ANTHROPIC_API_KEY` raises a `ConfigurationError` at pipeline startup — the pipeline never silently degrades to a weaker reasoning mode.
+**Fail-closed**: Missing `ARGUS_PROXY_TOKEN` raises a `ConfigurationError` at pipeline startup — the pipeline never silently degrades to a weaker reasoning mode.
 
 **Model selection**: Default is `claude-sonnet-4-6`. Override with `--model claude-opus-4-6` for maximum reasoning depth, or `--provider gemini` for Gemini fallback.
 

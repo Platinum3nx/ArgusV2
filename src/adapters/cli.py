@@ -35,8 +35,8 @@ def build_parser() -> argparse.ArgumentParser:
         "--provider",
         type=str,
         default=None,
-        choices=["anthropic", "gemini"],
-        help="LLM provider (default: LLM_PROVIDER env var or 'anthropic')",
+        choices=["anthropic"],
+        help="LLM provider (hosted mode currently supports: anthropic)",
     )
     parser.add_argument(
         "--model",

@@ -8,7 +8,7 @@
 
 ## Pre-Demo Checklist (before recording)
 
-- [ ] `ANTHROPIC_API_KEY` is set in the environment
+- [ ] `ARGUS_PROXY_TOKEN` is set in the environment
 - [ ] `demo_target/` files exist and are confirmed
 - [ ] Terminal font size is large (16pt+) for readability
 - [ ] Dashboard backup artifact is open in a browser tab

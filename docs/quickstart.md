@@ -5,16 +5,15 @@ This guide gets you from fork to observable autonomous MR action in ~10 minutes.
 ## Prerequisites
 - GitLab account with access to the GitLab AI Hackathon group
 - A fork/clone of this repository
-- Anthropic API key (primary reasoning engine)
+- `ARGUS_PROXY_TOKEN` (required; hosted Argus proxy auth)
 - `GITLAB_TOKEN` (required for MR comment/label publishing)
 
 ## 1) Fork and configure
 
 1. Fork this repository into the GitLab AI Hackathon group.
 2. In **Settings → CI/CD → Variables**, add:
-   - `ANTHROPIC_API_KEY` (required — primary reasoning engine)
+   - `ARGUS_PROXY_TOKEN` (required — hosted Argus proxy auth)
    - `GITLAB_TOKEN` (required for MR comment/label publishing)
-   - `GEMINI_API_KEY` (optional — for Gemini fallback via `--provider gemini`)
 3. Ensure pipeline minutes/runners are available.
 
 ## 2) Trigger the autonomous flow
@@ -41,10 +40,10 @@ After pipeline completion, verify:
 ## 30-second local sanity run
 
 ```bash
-# Set API key
-export ANTHROPIC_API_KEY=<your-key>
+# Set hosted proxy token
+export ARGUS_PROXY_TOKEN=<your-token>
 
-# Audit a vulnerable file (safe scenario)
+# Audit a safe scenario
 python -m src.adapters.cli \
   --file demo_target/safe_transfer.py \
   --allow-local-verify \
@@ -75,11 +74,8 @@ python -m src.adapters.cli --file demo_target/drift_withdrawal.py \
 ## Provider options
 
 ```bash
-# Primary (default): Anthropic Claude
+# Hosted mode currently supports Anthropic via proxy token
 python -m src.adapters.cli --provider anthropic --file <file> --allow-local-verify
-
-# Gemini fallback (requires GEMINI_API_KEY)
-python -m src.adapters.cli --provider gemini --file <file> --allow-local-verify
 ```
 
 ## Judge verification map
@@ -90,7 +86,7 @@ python -m src.adapters.cli --provider gemini --file <file> --allow-local-verify
 | Public flow | `.gitlab/duo/flows/argus_verify.yml` |
 | CI event trigger | `.gitlab-ci.yml` (`argus-verify` MR rules) |
 | Anthropic integration | `src/core/llm_provider.py` — `AnthropicClient` |
-| Test suite | `tests/` — 136 tests, 100% passing |
+| Test suite | `tests/` — 131 tests, 100% passing |
 | Reliability evidence | `docs/reliability-report.md`, `artifacts/phase3/` |
 | Demo script | `docs/demo-script.md` |
 | Architecture | `docs/architecture.md` |

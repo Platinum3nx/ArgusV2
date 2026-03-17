@@ -2,9 +2,9 @@
 
 | Symptom | Likely Cause | Fix |
 |---|---|---|
-| `ANTHROPIC_API_KEY is not set` | missing env var | set CI variable or export locally |
-| `GEMINI_API_KEY is not set` | missing env var | set CI variable or switch provider |
-| `Unknown provider` | invalid `--provider` | use `anthropic` or `gemini` |
+| `ARGUS_PROXY_TOKEN is not set` | missing env var | set CI variable or export locally |
+| `Provider 'gemini' is not supported in hosted mode` | unsupported provider in proxy mode | use `--provider anthropic` |
+| `Unknown provider` | invalid `--provider` | use `anthropic` |
 | `python: command not found` | environment path mismatch | use `python3` |
 | Dashboard not generated | report missing or generation exception | verify `argus_report.json`, inspect warning output |
 | No MR comment posted | token/scope/env missing | set `GITLAB_TOKEN` with `api`, ensure MR context vars |

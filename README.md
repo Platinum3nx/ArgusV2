@@ -77,7 +77,7 @@ ArgusV2 satisfies the GitLab hackathon "custom public agent or public flow" requ
 
 ## Quick Start
 
-**One-command scan** (requires only Docker — no API key, no Lean/Dafny install):
+**One-command scan** (requires Docker + `ARGUS_PROXY_TOKEN` — no local Anthropic key or Lean/Dafny install):
 
 ```bash
 git clone <repo-url> && cd ArgusV2
@@ -121,7 +121,7 @@ ArgusV2 uses **Anthropic Claude** (`claude-sonnet-4-6`) as its primary reasoning
 
 **Key design principle**: Claude proposes — Lean disposes. Every Claude output is validated by the formal verifier. False positives (false VERIFIED verdicts) are impossible by construction.
 
-**Zero-config**: LLM calls go through a hosted proxy — no local API key required.
+**Managed-key mode**: LLM calls go through a hosted proxy — users do not provide Anthropic keys locally, but must provide `ARGUS_PROXY_TOKEN`.
 
 **Provenance**: Every trace artifact records `provider` and `model` for full auditability.
 
@@ -182,7 +182,7 @@ Three pre-built scenarios in `demo_target/`:
 │   │   ├── verdict.py               # Fail-closed verdict computation
 │   │   └── ci_integrity.py          # 11-gate CI integrity suite
 │   └── utils/
-├── tests/                           # 136 tests, 100% passing
+├── tests/                           # 131 tests, 100% passing
 ├── benchmarks/seeded/               # Deterministic benchmark corpus (3 scenarios)
 ├── demo_target/                     # Demo scenarios with pre-generated backup artifacts
 ├── docs/
@@ -212,7 +212,7 @@ Three pre-built scenarios in `demo_target/`:
 
 | Metric | Value |
 |:---|:---|
-| Test suite | **136/136 passing** |
+| Test suite | **131/131 passing** |
 | Anthropic end-to-end validation runs | **9/9** (3 files × 3 runs) |
 | False positives | **0** |
 | Verdict stability | **100%** (same result across repeated runs) |

@@ -181,7 +181,7 @@ Hours/days of toil             →      Autonomous, traceable, zero false positi
 └─────────────────────────────────────────────────────┘
 
 Fail-closed invariants:
-- Missing ANTHROPIC_API_KEY → ConfigurationError at startup
+- Missing ARGUS_PROXY_TOKEN → ConfigurationError at startup
 - LLM returns empty/malformed → Pipeline fails, not VERIFIED
 - Verifier timeout/error → UNVERIFIED or ERROR, never VERIFIED
 - Any exception in core path → Caught, verdict = ERROR
