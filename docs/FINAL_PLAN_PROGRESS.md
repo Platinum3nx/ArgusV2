@@ -1,6 +1,6 @@
 # ArgusV2 Final Plan Progress
 
-Last updated: 2026-03-15 (UTC)
+Last updated: 2026-03-17 (UTC)
 
 This tracker maps implementation progress to the 5 phases defined in `FinalPlan.md`.
 
@@ -188,7 +188,7 @@ Stabilize end-to-end autonomous behavior so outcomes are deterministic, fail-clo
 ---
 
 ## Phase 5 — Submission Packaging & Launch Readiness
-**Status:** IN PROGRESS (implementation advanced; external submission steps pending)
+**Status:** IN PROGRESS (engineering closure complete; external/manual submission closure pending)
 
 ### Execution status
 - [x] Gate B docs created: `docs/security-posture.md`, `docs/data-handling-policy.md`
@@ -200,6 +200,16 @@ Stabilize end-to-end autonomous behavior so outcomes are deterministic, fail-clo
   - public pipeline API maps exposed (`original_code_map`, `repaired_code_map`)
   - CLI no longer depends on private pipeline attrs
   - GitLab SAST analyzer/scanner version metadata unified to `2.1.0`
+  - hosted-mode runtime fixed (`create_llm_client(provider, model)` compatibility restored)
+  - hosted-mode provider guard enforced (`anthropic` only)
+  - Dockerfile no longer bakes proxy token via `ARG/ENV`
+- [x] Proxy operations hardening complete:
+  - `proxy/main.py` now includes `/health`, `/ready`, per-token auth, per-token usage, per-token daily limits, per-IP hourly limits, structured logging, upstream error wrapping
+  - multi-token config via `ARGUS_PROXY_TOKENS_JSON` with single-token backward compatibility
+  - proxy runbook added: `docs/proxy-operations.md`
+- [x] LLM provider robustness improved:
+  - proxy payload validation added (`text` must exist and be non-empty)
+  - retry behavior retained and tested
 - [x] Reliability report consolidated for Phase 5: `docs/reliability-report.md`
 - [x] Large-MR stress artifacts generated:
   - `artifacts/phase5/mr-comment-stress.json` (within GitLab comment limit)
@@ -207,11 +217,16 @@ Stabilize end-to-end autonomous behavior so outcomes are deterministic, fail-clo
 - [x] Environment variable contract enumerated from source:
   - `artifacts/phase5/env-vars-contract.json`
 - [x] Demo backup provenance scaffold added: `demo_target/backup_artifacts/PROVENANCE.md`
-- [ ] Provider-backed end-to-end demo runs in this environment (blocked by missing API keys)
-- [ ] Screenshot pack capture (`docs/assets/*.png`)
-- [ ] Demo video recording/upload and Devpost final submission URLs
+- [x] Test suite green after hosted-mode hardening: `133 passed`
+
+### Strict remaining manual closure checklist (only items left)
+1. [ ] Run 3 token-backed end-to-end demo scenarios with valid `ARGUS_PROXY_TOKEN` and archive resulting artifacts (`safe_transfer`, `vulnerable_transfer`, `drift_withdrawal`) under `demo_target/backup_artifacts/` with timestamps.
+2. [ ] Capture final visual submission assets (`docs/assets/dashboard.png`, `docs/assets/mr-comment.png`, `docs/assets/terminal-run.png`, optional architecture image).
+3. [ ] Record/upload final demo video and add final URLs in `docs/submission-text.md` (video URL + Devpost submission URL).
+4. [ ] Manually confirm repo visibility/hackathon checklist in GitLab UI (public visibility, latest default-branch files present, no exposed secrets).
 
 ### Evidence links
-- Docs: `docs/security-posture.md`, `docs/data-handling-policy.md`, `docs/deployment-guide.md`, `docs/install-validation.md`, `docs/ops-runbook.md`, `docs/troubleshooting.md`, `docs/enterprise-readiness.md`, `docs/pilot-proposal.md`, `docs/competitive-positioning.md`, `docs/demo-integrity-checklist.md`, `docs/reliability-report.md`
-- Stress artifacts: `artifacts/phase5/mr-comment-stress.json`, `artifacts/phase5/stress_dashboard.html`
+- Core docs: `docs/security-posture.md`, `docs/data-handling-policy.md`, `docs/deployment-guide.md`, `docs/install-validation.md`, `docs/ops-runbook.md`, `docs/troubleshooting.md`, `docs/enterprise-readiness.md`, `docs/pilot-proposal.md`, `docs/competitive-positioning.md`, `docs/demo-integrity-checklist.md`, `docs/reliability-report.md`, `docs/proxy-operations.md`
+- Hardening code: `src/core/llm_provider.py`, `src/adapters/cli.py`, `Dockerfile`, `proxy/main.py`
+- Stress/validation artifacts: `artifacts/phase5/mr-comment-stress.json`, `artifacts/phase5/stress_dashboard.html`, `artifacts/phase5/env-vars-contract.json`
 - Visual pack scaffold: `docs/assets/README.md`
