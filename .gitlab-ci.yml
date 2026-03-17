@@ -30,6 +30,8 @@ argus-verify:
   image: "$ARGUS_IMAGE"
   needs:
     - job: build-argus-image
+  variables:
+    ARGUS_PROXY_TOKEN: "$ARGUS_PROXY_TOKEN"
   script:
     - python -m src.adapters.cli --repo-path . --mode ci --base-ref "${CI_MERGE_REQUEST_DIFF_BASE_SHA:-}"
   artifacts:

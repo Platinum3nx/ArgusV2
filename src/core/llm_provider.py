@@ -1,13 +1,15 @@
 from __future__ import annotations
 
+import os
+
 import requests
 
 
 # ---------------------------------------------------------------------------
 # Proxy configuration
 # ---------------------------------------------------------------------------
-PROXY_URL = "https://argusv2-0.onrender.com/"
-PROXY_TOKEN = "secret-token-argus"
+PROXY_URL = os.getenv("ARGUS_PROXY_URL", "https://argusv2-0.onrender.com")
+PROXY_TOKEN = os.getenv("ARGUS_PROXY_TOKEN", "")
 
 
 class ConfigurationError(Exception):

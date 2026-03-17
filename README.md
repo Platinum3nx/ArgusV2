@@ -77,21 +77,23 @@ ArgusV2 satisfies the GitLab hackathon "custom public agent or public flow" requ
 
 ## Quick Start
 
-**30-second local test** (no GitLab needed, no API key required):
+**One-command scan** (requires only Docker — no API key, no Lean/Dafny install):
 
 ```bash
-# 1. Clone and install
 git clone <repo-url> && cd ArgusV2
-pip install -r requirements.txt
+./argus scan demo_target/vulnerable_transfer.py
+open argus-output/argus_dashboard.html
+```
 
-# 2. Audit a vulnerable file (no API key needed — uses hosted proxy)
+That's it. The `argus` wrapper handles Docker, Lean 4, Dafny, and LLM access automatically.
+
+**Without Docker** (requires `pip install -r requirements.txt`):
+
+```bash
 python -m src.adapters.cli \
   --file demo_target/vulnerable_transfer.py \
   --allow-local-verify
-
-# 3. Open the dashboard
-open argus_dashboard.html   # macOS
-# or: xdg-open argus_dashboard.html  (Linux)
+open argus_dashboard.html
 ```
 
 **Full CI trigger** (in your GitLab fork):

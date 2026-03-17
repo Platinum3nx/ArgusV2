@@ -36,5 +36,7 @@ COPY lean_project ./lean_project
 COPY .argusignore.example ./
 
 ENV PYTHONPATH=/app
+ARG ARGUS_PROXY_TOKEN
+ENV ARGUS_PROXY_TOKEN=${ARGUS_PROXY_TOKEN}
 CMD ["python", "-m", "src.adapters.cli", "--mode", "ci", "--repo-path", "."]
 

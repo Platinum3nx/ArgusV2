@@ -1,0 +1,126 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+IMAGE="registry.gitlab.com/platinum3nx/argusv2/argus-v2:latest"
+CONTAINER_WORK="/workspace"
+
+usage() {
+    cat <<EOF
+Usage: ./argus scan <file-or-directory> [options]
+
+Runs ArgusV2 inside Docker — no Lean, Dafny, or API key setup required.
+
+Commands:
+  scan <path>       Audit a Python file or directory
+
+Options:
+  --model <model>   Override LLM model (default: claude-sonnet-4-6)
+  --output <dir>    Directory for output artifacts (default: ./argus-output)
+  --help            Show this help message
+
+Examples:
+  ./argus scan myapp/transfer.py
+  ./argus scan src/ --output results/
+EOF
+    exit 0
+}
+
+# --- Argument parsing ---
+
+[[ $# -eq 0 ]] && usage
+[[ "$1" == "--help" || "$1" == "-h" ]] && usage
+[[ "$1" != "scan" ]] && { echo "Error: unknown command '$1'. Use './argus scan <path>'"; exit 1; }
+shift
+
+[[ $# -eq 0 ]] && { echo "Error: no target file or directory specified."; usage; }
+
+TARGET="$1"; shift
+MODEL=""
+OUTPUT_DIR="./argus-output"
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --model)  MODEL="$2"; shift 2 ;;
+        --output) OUTPUT_DIR="$2"; shift 2 ;;
+        --help|-h) usage ;;
+        *) echo "Error: unknown option '$1'"; exit 1 ;;
+    esac
+done
+
+# --- Preflight checks ---
+
+if ! command -v docker &>/dev/null; then
+    echo "Error: Docker is not installed. Install it from https://docs.docker.com/get-docker/"
+    exit 1
+fi
+
+if ! docker info &>/dev/null 2>&1; then
+    echo "Error: Docker is not running. Start Docker Desktop or the Docker daemon."
+    exit 1
+fi
+
+if [[ -z "${ARGUS_PROXY_TOKEN:-}" ]]; then
+    echo "Error: ARGUS_PROXY_TOKEN is not set."
+    echo "Set it with: export ARGUS_PROXY_TOKEN=\"<token>\""
+    echo "Contact the ArgusV2 team to get a token."
+    exit 1
+fi
+
+TARGET="$(cd "$(dirname "$TARGET")" && pwd)/$(basename "$TARGET")"
+
+if [[ ! -e "$TARGET" ]]; then
+    echo "Error: '$TARGET' does not exist."
+    exit 1
+fi
+
+mkdir -p "$OUTPUT_DIR"
+OUTPUT_DIR="$(cd "$OUTPUT_DIR" && pwd)"
+
+# --- Build CLI args ---
+
+CLI_ARGS=("--allow-local-verify")
+CLI_ARGS+=("--output-json"  "${CONTAINER_WORK}/output/argus_report.json")
+CLI_ARGS+=("--output-md"    "${CONTAINER_WORK}/output/Argus_Audit_Report.md")
+CLI_ARGS+=("--output-sarif" "${CONTAINER_WORK}/output/argus-sarif-report.json")
+CLI_ARGS+=("--output-html"  "${CONTAINER_WORK}/output/argus_dashboard.html")
+
+if [[ -f "$TARGET" ]]; then
+    CLI_ARGS+=("--file" "${CONTAINER_WORK}/target/$(basename "$TARGET")")
+    MOUNT_SRC="$(dirname "$TARGET")"
+    MOUNT_TARGET="${CONTAINER_WORK}/target"
+else
+    CLI_ARGS+=("--repo-path" "${CONTAINER_WORK}/target")
+    MOUNT_SRC="$TARGET"
+    MOUNT_TARGET="${CONTAINER_WORK}/target"
+fi
+
+[[ -n "$MODEL" ]] && CLI_ARGS+=("--model" "$MODEL")
+
+# --- Pull image if needed ---
+
+echo "Pulling ArgusV2 image (first run may take a few minutes)..."
+docker pull "$IMAGE" 2>/dev/null || {
+    echo "Image not found in registry. Building locally..."
+    SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+    docker build -t "$IMAGE" "$SCRIPT_DIR"
+}
+
+# --- Run ---
+
+echo "Scanning: $TARGET"
+echo "Output:   $OUTPUT_DIR"
+echo ""
+
+docker run --rm \
+    -e ARGUS_PROXY_TOKEN="${ARGUS_PROXY_TOKEN}" \
+    -v "${MOUNT_SRC}:${MOUNT_TARGET}:ro" \
+    -v "${OUTPUT_DIR}:${CONTAINER_WORK}/output" \
+    "$IMAGE" \
+    python -m src.adapters.cli "${CLI_ARGS[@]}"
+
+echo ""
+echo "Done. Results in ${OUTPUT_DIR}/"
+echo "  Dashboard:  ${OUTPUT_DIR}/argus_dashboard.html"
+echo "  JSON:       ${OUTPUT_DIR}/argus_report.json"
+echo "  Markdown:   ${OUTPUT_DIR}/Argus_Audit_Report.md"
+echo "  SARIF:      ${OUTPUT_DIR}/argus-sarif-report.json"
