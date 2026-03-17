@@ -12,7 +12,7 @@ Consolidated reliability evidence across Phase 1 and Phase 3+4 outcomes, includi
 | Safe-file verdict stability | 100% VERIFIED | 100% VERIFIED | 100% | PASS |
 | Vulnerability-path stability | 100% detect (VULNERABLE/FIXED) | 100% detect (VULNERABLE/FIXED) | 100% | PASS |
 | False VERIFIED rate | 0% | 0% | 0% | PASS |
-| Test suite pass rate | 66/66 | 131/131 | 100% | PASS |
+| Test suite pass rate | 66/66 | 133/133 | 100% | PASS |
 | Fail-closed scenario coverage | validated | 14/14 passing | all pass | PASS |
 
 ## Latency profile

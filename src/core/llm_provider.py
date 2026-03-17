@@ -68,7 +68,11 @@ class ProxyClient(LLMClient):
                 )
                 if response.status_code not in RETRYABLE_STATUS:
                     response.raise_for_status()
-                    return response.json()["text"]
+                    payload = response.json()
+                    text = payload.get("text") if isinstance(payload, dict) else None
+                    if not isinstance(text, str) or not text.strip():
+                        raise ValueError("Proxy returned invalid payload (missing non-empty 'text').")
+                    return text
                 last_exc = requests.HTTPError(response=response)
             except (requests.ConnectionError, requests.Timeout) as exc:
                 last_exc = exc

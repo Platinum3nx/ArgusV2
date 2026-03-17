@@ -13,7 +13,7 @@ Date: 2026-03-17 (UTC)
 ```bash
 PYTHONPATH=. python3 -m pytest tests -q
 ```
-Result: **131 passed**
+Result: **133 passed**
 
 ### 2) Hosted-provider dry-run probe
 ```bash

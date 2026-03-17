@@ -86,7 +86,7 @@ python -m src.adapters.cli --provider anthropic --file <file> --allow-local-veri
 | Public flow | `.gitlab/duo/flows/argus_verify.yml` |
 | CI event trigger | `.gitlab-ci.yml` (`argus-verify` MR rules) |
 | Anthropic integration | `src/core/llm_provider.py` — `AnthropicClient` |
-| Test suite | `tests/` — 131 tests, 100% passing |
+| Test suite | `tests/` — 133 tests, 100% passing |
 | Reliability evidence | `docs/reliability-report.md`, `artifacts/phase3/` |
 | Demo script | `docs/demo-script.md` |
 | Architecture | `docs/architecture.md` |

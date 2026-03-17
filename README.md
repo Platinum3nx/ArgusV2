@@ -182,7 +182,7 @@ Three pre-built scenarios in `demo_target/`:
 │   │   ├── verdict.py               # Fail-closed verdict computation
 │   │   └── ci_integrity.py          # 11-gate CI integrity suite
 │   └── utils/
-├── tests/                           # 131 tests, 100% passing
+├── tests/                           # 133 tests, 100% passing
 ├── benchmarks/seeded/               # Deterministic benchmark corpus (3 scenarios)
 ├── demo_target/                     # Demo scenarios with pre-generated backup artifacts
 ├── docs/
@@ -212,7 +212,7 @@ Three pre-built scenarios in `demo_target/`:
 
 | Metric | Value |
 |:---|:---|
-| Test suite | **131/131 passing** |
+| Test suite | **133/133 passing** |
 | Anthropic end-to-end validation runs | **9/9** (3 files × 3 runs) |
 | False positives | **0** |
 | Verdict stability | **100%** (same result across repeated runs) |
