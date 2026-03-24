@@ -16,6 +16,8 @@ import pytest
 
 from src.core.dashboard import (
     _exec_tagline,
+    _render_diff,
+    _render_obligation_table,
     _risk_level,
     generate_dashboard,
 )
@@ -343,3 +345,62 @@ def test_exec_tagline_mixed() -> None:
     tagline = _exec_tagline(summary)
     # Should mention both the vulnerability and the fix
     assert tagline  # not empty
+
+
+# ---------------------------------------------------------------------------
+# Obligation table — UNKNOWN default status (P0.1)
+# ---------------------------------------------------------------------------
+
+def test_obligation_table_empty_results_renders_unknown() -> None:
+    """Empty obligation_results with non-empty obligations renders UNKNOWN, not PASS."""
+    obligations = [
+        {"id": "obl_1", "property": "x >= 0", "severity": "high", "description": "non-negative"},
+        {"id": "obl_2", "property": "y < 100", "severity": "medium", "description": "bounded"},
+    ]
+    html = _render_obligation_table(obligations, obligation_results=[])
+    assert "UNKNOWN" in html
+    assert "PASS" not in html
+    assert "FAIL" not in html
+
+
+def test_obligation_table_mixed_results_and_unknown() -> None:
+    """Obligations with partial results render both PASS and UNKNOWN correctly."""
+    obligations = [
+        {"id": "obl_1", "property": "x >= 0", "severity": "high", "description": "non-negative"},
+        {"id": "obl_2", "property": "y < 100", "severity": "medium", "description": "bounded"},
+    ]
+    obligation_results = [
+        {"obligation": {"id": "obl_1"}, "verified": True},
+    ]
+    html = _render_obligation_table(obligations, obligation_results=obligation_results)
+    assert "PASS" in html      # obl_1 has a result with verified=True
+    assert "UNKNOWN" in html   # obl_2 has no result entry
+    assert "FAIL" not in html
+
+
+# ---------------------------------------------------------------------------
+# _render_diff — difflib-based rendering (A3.3)
+# ---------------------------------------------------------------------------
+
+def test_render_diff_duplicate_lines_both_shown() -> None:
+    """Duplicate lines in the original should both appear in the diff output."""
+    original = "line_a\nline_b\nline_a\n"
+    repaired = "line_a\nline_c\nline_a\n"
+    html = _render_diff(original, repaired)
+    # Both occurrences of line_a should be present as context lines
+    assert html.count("line_a") >= 2
+    # line_b should appear as a removal, line_c as an addition
+    assert "diff-line-remove" in html
+    assert "diff-line-add" in html
+    assert "line_b" in html
+    assert "line_c" in html
+
+
+def test_render_diff_moved_lines_shows_removal_and_addition() -> None:
+    """Moving a line shows it as both removed from old position and added at new."""
+    original = "alpha\nbeta\ngamma\n"
+    repaired = "gamma\nbeta\nalpha\n"
+    html = _render_diff(original, repaired)
+    # alpha and gamma are moved — they should appear in both remove and add divs
+    assert "diff-line-remove" in html
+    assert "diff-line-add" in html

@@ -62,6 +62,51 @@ theorem f_nonneg (x : Int) : True := by
     assert "header/goal" in reason
 
 
+def test_validate_candidate_allows_sorry_in_comments() -> None:
+    """A1.6: 'sorry' inside a Lean comment should NOT trigger rejection."""
+    original = """
+def f (x : Int) : Int :=
+  x + 1
+
+theorem f_nonneg (x : Int) : (f x >= 0) := by
+  unfold f
+  omega
+"""
+    candidate = """
+def f (x : Int) : Int :=
+  x + 1
+
+theorem f_nonneg (x : Int) : (f x >= 0) := by
+  -- sorry about this naming convention
+  unfold f
+  omega
+"""
+    ok, reason = ProofSearchEngine(llm_client=_FakeLLMClient()).validate_candidate(original, candidate)
+    assert ok, f"Should accept sorry in comment, got: {reason}"
+
+
+def test_validate_candidate_rejects_sorry_in_code() -> None:
+    """A1.6: 'sorry' as an actual tactic must still be rejected."""
+    original = """
+def f (x : Int) : Int :=
+  x + 1
+
+theorem f_nonneg (x : Int) : (f x >= 0) := by
+  unfold f
+  omega
+"""
+    candidate = """
+def f (x : Int) : Int :=
+  x + 1
+
+theorem f_nonneg (x : Int) : (f x >= 0) := by
+  sorry
+"""
+    ok, reason = ProofSearchEngine(llm_client=_FakeLLMClient()).validate_candidate(original, candidate)
+    assert not ok
+    assert "forbidden" in reason
+
+
 def test_validate_candidate_rejects_proof_bypass_markers() -> None:
     original = """
 def f (x : Int) : Int :=

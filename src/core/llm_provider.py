@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import os
+import random
 import time
 
 import requests
@@ -69,16 +70,40 @@ class ProxyClient(LLMClient):
                 if response.status_code not in RETRYABLE_STATUS:
                     response.raise_for_status()
                     payload = response.json()
-                    text = payload.get("text") if isinstance(payload, dict) else None
+                    if not isinstance(payload, dict) or "text" not in payload:
+                        raise ValueError(f"Proxy response missing 'text' field: {list(payload.keys()) if isinstance(payload, dict) else type(payload)}")
+                    text = payload["text"]
                     if not isinstance(text, str) or not text.strip():
-                        raise ValueError("Proxy returned invalid payload (missing non-empty 'text').")
+                        raise ValueError("Proxy returned empty or non-string 'text'.")
+                    request_id = payload.get("request_id", "")
+                    if request_id:
+                        log.info("proxy_request_id=%s", request_id)
                     return text
                 last_exc = requests.HTTPError(response=response)
-            except (requests.ConnectionError, requests.Timeout) as exc:
+            except (requests.ConnectionError, requests.Timeout, ValueError) as exc:
                 last_exc = exc
 
-            wait = BACKOFF_BASE ** attempt
-            log.warning("Proxy request failed (attempt %d/%d), retrying in %ds…", attempt, MAX_RETRIES, wait)
+            if attempt == MAX_RETRIES:
+                break
+
+            # Honor Retry-After header if present on 429 responses
+            retry_after = None
+            if isinstance(last_exc, requests.HTTPError) and hasattr(last_exc, 'response') and last_exc.response is not None:
+                retry_after = last_exc.response.headers.get("Retry-After")
+
+            if retry_after is not None:
+                try:
+                    wait = min(float(retry_after), 60)
+                except (ValueError, TypeError):
+                    wait = BACKOFF_BASE ** attempt
+            else:
+                wait = BACKOFF_BASE ** attempt
+
+            # Add bounded jitter: +/- 25% of base wait
+            jitter = wait * 0.25 * (2 * random.random() - 1)
+            wait = max(1, wait + jitter)
+
+            log.warning("Proxy request failed (attempt %d/%d), retrying in %.1fs…", attempt, MAX_RETRIES, wait)
             time.sleep(wait)
 
         raise last_exc  # type: ignore[misc]

@@ -73,7 +73,9 @@ class ProofSearchEngine:
         if not candidate_code.strip():
             return False, "Candidate proof is empty"
 
-        lowered = candidate_code.lower()
+        # Strip Lean single-line comments before checking for forbidden markers
+        code_no_comments = re.sub(r"--.*$", "", candidate_code, flags=re.MULTILINE)
+        lowered = code_no_comments.lower()
         if re.search(r"\b(sorry|admit|axiom)\b", lowered):
             return False, "Candidate contains forbidden proof bypass marker"
 

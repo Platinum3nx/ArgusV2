@@ -28,3 +28,14 @@ def f(x: int) -> int:
     outcome = PythonIRLowerer().lower(code)
     assert not outcome.success
     assert "does not return" in outcome.error
+
+
+def test_lowerer_rejects_unsupported_type_annotation() -> None:
+    code = """
+def foo(x: float) -> int:
+    return 1
+"""
+    outcome = PythonIRLowerer().lower(code)
+    assert not outcome.success
+    assert "Unsupported type annotation" in outcome.error
+    assert "float" in outcome.error

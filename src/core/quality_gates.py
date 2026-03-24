@@ -96,9 +96,17 @@ def generate_simple_mutations(code: str) -> List[str]:
     replacements = [
         (">=", ">"),
         ("<=", "<"),
+        (">", ">="),
+        ("<", "<="),
         ("==", "!="),
-        ("return balance", "return balance - amount"),
+        ("!=", "=="),
+        ("+ ", "- "),
+        ("- ", "+ "),
         ("if ", "if not "),
+        ("and", "or"),
+        ("or", "and"),
+        ("True", "False"),
+        ("False", "True"),
     ]
     for source, target in replacements:
         if source in code:

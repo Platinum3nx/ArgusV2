@@ -12,7 +12,8 @@ def test_ci_integrity_suite_passes_with_complete_inputs(tmp_path: Path) -> None:
     # Use code that has a non_negativity obligation (so semantic guard passes)
     # but contains no simple mutation match strings, so the mutation gate skips
     # (no mutations generated) rather than failing.
-    code = "def compute(total: int) -> int:\n    return total\n"
+    # NOTE: avoid type-annotation arrows (->) because ">" now triggers a mutation.
+    code = "def compute(total, amount):\n    return total\n"
     files = [("withdraw.py", code)]
     reports = [
         FileReport(

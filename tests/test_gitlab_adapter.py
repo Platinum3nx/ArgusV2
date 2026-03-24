@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import os
+
 from src.adapters.gitlab_adapter import GitLabAdapter
 from src.core.models import Verdict
 from src.core.reporter import FileReport
@@ -93,3 +95,85 @@ def test_gitlab_adapter_skips_when_not_configured() -> None:
     result = adapter.publish_results([_file(Verdict.VERIFIED)], dry_run=False)
     assert not result.posted
     assert "not configured" in result.reason
+
+
+# --- New tests ---
+
+
+def test_derive_labels_verified() -> None:
+    adapter = GitLabAdapter(url="", token="", project_id="", merge_request_iid="")
+    files = [_file(Verdict.VERIFIED), _file(Verdict.VERIFIED)]
+    labels = adapter.derive_labels(files)
+    assert labels == ["argus:verified"]
+
+
+def test_derive_labels_fixed() -> None:
+    adapter = GitLabAdapter(url="", token="", project_id="", merge_request_iid="")
+    files = [_file(Verdict.FIXED), _file(Verdict.VERIFIED)]
+    labels = adapter.derive_labels(files)
+    assert labels == ["argus:fixed"]
+
+
+def test_derive_labels_vulnerable() -> None:
+    adapter = GitLabAdapter(url="", token="", project_id="", merge_request_iid="")
+    files = [_file(Verdict.VULNERABLE), _file(Verdict.VERIFIED)]
+    labels = adapter.derive_labels(files)
+    assert labels == ["argus:vulnerable"]
+
+
+def test_derive_labels_unverified() -> None:
+    adapter = GitLabAdapter(url="", token="", project_id="", merge_request_iid="")
+    files = [_file(Verdict.UNVERIFIED)]
+    labels = adapter.derive_labels(files)
+    assert labels == ["argus:vulnerable"]
+
+
+def test_derive_labels_error() -> None:
+    adapter = GitLabAdapter(url="", token="", project_id="", merge_request_iid="")
+    files = [_file(Verdict.ERROR)]
+    labels = adapter.derive_labels(files)
+    assert labels == ["argus:vulnerable"]
+
+
+def test_configured_all_set() -> None:
+    adapter = GitLabAdapter(
+        url="https://gitlab.example.com",
+        token="glpat-xxxxx",
+        project_id="42",
+        merge_request_iid="7",
+    )
+    assert adapter.configured() is True
+
+
+def test_configured_missing_token() -> None:
+    adapter = GitLabAdapter(
+        url="https://gitlab.example.com",
+        token="",
+        project_id="42",
+        merge_request_iid="7",
+    )
+    assert adapter.configured() is False
+
+
+def test_configured_missing_project_id() -> None:
+    adapter = GitLabAdapter(
+        url="https://gitlab.example.com",
+        token="glpat-xxxxx",
+        project_id="",
+        merge_request_iid="7",
+    )
+    assert adapter.configured() is False
+
+
+def test_from_env(monkeypatch) -> None:
+    monkeypatch.setenv("CI_SERVER_URL", "https://custom.gitlab.io")
+    monkeypatch.setenv("GITLAB_TOKEN", "test-token-123")
+    monkeypatch.setenv("CI_PROJECT_ID", "99")
+    monkeypatch.setenv("CI_MERGE_REQUEST_IID", "15")
+
+    adapter = GitLabAdapter.from_env()
+
+    assert adapter.url == "https://custom.gitlab.io"
+    assert adapter.token == "test-token-123"
+    assert adapter.project_id == "99"
+    assert adapter.merge_request_iid == "15"

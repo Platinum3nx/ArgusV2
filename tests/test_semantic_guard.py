@@ -60,6 +60,24 @@ def test_semantic_guard_detects_missing_function_symbol() -> None:
     assert any(issue.code == "MISSING_FUNCTION_SYMBOL" for issue in result.issues)
 
 
+def test_semantic_guard_detects_unrecognized_translation_format() -> None:
+    obligations = [
+        Obligation(
+            id="withdraw:non_negative_result",
+            property="withdraw(...) >= 0",
+            category="non_negativity",
+            description="non-negative",
+        )
+    ]
+    result = run_semantic_guard(
+        python_code="def withdraw(balance, amount): return balance - amount",
+        translated_code="some random text that is not a recognized format",
+        obligations=obligations,
+    )
+    assert not result.passed
+    assert any(issue.code == "UNRECOGNIZED_TRANSLATION_FORMAT" for issue in result.issues)
+
+
 def test_semantic_guard_detects_trivial_theorem_goal() -> None:
     obligations = [
         Obligation(

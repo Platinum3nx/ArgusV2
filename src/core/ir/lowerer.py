@@ -292,9 +292,9 @@ class PythonIRLowerer:
                 return IRType.INT
             if annotation.id == "bool":
                 return IRType.BOOL
-            return IRType.INT
+            raise LoweringError(f"Unsupported type annotation: {annotation.id}")
         if isinstance(annotation, ast.Subscript) and isinstance(annotation.value, ast.Name):
             container = annotation.value.id
             if container in {"list", "List"}:
                 return IRType.LIST_INT
-        return IRType.INT
+        raise LoweringError(f"Unsupported type annotation: {ast.dump(annotation)}")

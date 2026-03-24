@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import sys
 from pathlib import Path
 from typing import List, Tuple
 
@@ -21,6 +22,15 @@ from src.core.reporter import (
 )
 from src.utils.file_router import discover_python_files
 from src.utils.git_ops import changed_python_files
+
+CONSTRUCT_GUIDANCE = {
+    "for_loop": "For-loops are verified via the Dafny engine. Ensure loop is over range().",
+    "class_definition": "OOP patterns are not supported. Extract logic into standalone functions.",
+    "async_function": "Async functions are not supported. Use synchronous equivalents.",
+    "comprehension": "List/dict/set comprehensions are not yet supported. Use explicit loops.",
+    "try_except": "Try/except blocks are not yet supported. Handle errors outside the verified function.",
+    "global_statement": "Global state mutations are not supported. Use function parameters instead.",
+}
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -148,6 +158,14 @@ def main() -> int:
             print(json.dumps({"gitlab_publish": gitlab_result.reason}, indent=2))
 
     print(json.dumps(json_payload["summary"], indent=2))
+
+    # Print construct guidance for UNVERIFIED results
+    for report in reports:
+        if report.verdict.name == "UNVERIFIED" and report.message:
+            for construct, guidance in CONSTRUCT_GUIDANCE.items():
+                if construct in report.message.lower():
+                    print(json.dumps({"guidance": {report.filename: guidance}}, indent=2))
+
     if ci_gate_report is not None:
         print(
             json.dumps(
@@ -172,7 +190,12 @@ def _collect_target_files(args: argparse.Namespace, repo_root: Path) -> List[Tup
             rel = str(path.relative_to(repo_root))
         except ValueError:
             rel = path.name
-        return [(rel, path.read_text(encoding="utf-8"))]
+        try:
+            code = path.read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError) as exc:
+            print(json.dumps({"warning": f"Skipping {rel}: {exc}"}, indent=2), file=sys.stderr)
+            return []
+        return [(rel, code)]
 
     if args.mode == "ci":
         changed = changed_python_files(repo_root, base_ref=args.base_ref)
@@ -184,15 +207,27 @@ def _collect_target_files(args: argparse.Namespace, repo_root: Path) -> List[Tup
                 path = repo_root / rel
                 if not path.exists():
                     continue
-                items.append((rel, path.read_text(encoding="utf-8")))
+                try:
+                    code = path.read_text(encoding="utf-8")
+                except (OSError, UnicodeDecodeError) as exc:
+                    print(json.dumps({"warning": f"Skipping {rel}: {exc}"}, indent=2), file=sys.stderr)
+                    continue
+                items.append((rel, code))
             return items
 
     discovered = discover_python_files(repo_root)
-    return [
-        (str(path.relative_to(repo_root)), path.read_text(encoding="utf-8"))
-        for path in discovered
-        if _is_audit_target(str(path.relative_to(repo_root)))
-    ]
+    items: List[Tuple[str, str]] = []
+    for path in discovered:
+        rel = str(path.relative_to(repo_root))
+        if not _is_audit_target(rel):
+            continue
+        try:
+            code = path.read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError) as exc:
+            print(json.dumps({"warning": f"Skipping {rel}: {exc}"}, indent=2), file=sys.stderr)
+            continue
+        items.append((rel, code))
+    return items
 
 
 def _is_audit_target(rel_path: str) -> bool:

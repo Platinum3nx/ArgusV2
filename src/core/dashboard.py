@@ -248,6 +248,7 @@ a { color: var(--accent); text-decoration: none; }
 .obligation-table tr:last-child td { border-bottom: none; }
 .obl-pass { color: var(--verified); font-weight: 700; }
 .obl-fail { color: var(--vulnerable); font-weight: 700; }
+.obl-unknown { color: var(--unverified); font-weight: 700; }
 .obl-id { font-family: monospace; font-size: 12px; }
 .severity-critical { color: var(--vulnerable); }
 .severity-high { color: var(--unverified); }
@@ -448,7 +449,7 @@ def _html_escape(text: str) -> str:
 
 def _action_guidance(verdict: str, message: str, obligations: List[Dict]) -> str:
     """Generate actionable developer guidance for non-VERIFIED verdicts."""
-    failed = [o for o in obligations if not o.get("verified", True)]
+    failed = [o for o in obligations if not o.get("verified", False)]
     if verdict == "VULNERABLE":
         failing_ids = ", ".join(o["obligation"]["id"] for o in failed if "obligation" in o)
         guide = f"<div class='action-box'>"
@@ -484,23 +485,23 @@ def _render_code_panel(label: str, code: str, lang: str, extra_class: str = "") 
 
 
 def _render_diff(original: str, repaired: str) -> str:
-    """Simple line-by-line diff rendering."""
-    orig_lines = original.splitlines()
-    rep_lines = repaired.splitlines()
-
-    # Identify removed / added lines (simple set-based diff)
-    orig_set = set(orig_lines)
-    rep_set = set(rep_lines)
+    """Sequential line-by-line diff rendering using difflib."""
+    import difflib
+    orig_lines = original.splitlines(keepends=True)
+    rep_lines = repaired.splitlines(keepends=True)
+    diff = difflib.unified_diff(orig_lines, rep_lines, lineterm="")
 
     html = ["<div class='code-body' style='white-space:pre;'>"]
-    for line in orig_lines:
-        if line not in rep_set:
-            html.append(f"<div class='diff-line-remove'>- {_html_escape(line)}</div>")
+    for line in diff:
+        stripped = line.rstrip("\n")
+        if line.startswith("---") or line.startswith("+++") or line.startswith("@@"):
+            continue
+        if line.startswith("-"):
+            html.append(f"<div class='diff-line-remove'>{_html_escape(stripped)}</div>")
+        elif line.startswith("+"):
+            html.append(f"<div class='diff-line-add'>{_html_escape(stripped)}</div>")
         else:
-            html.append(f"<div>  {_html_escape(line)}</div>")
-    for line in rep_lines:
-        if line not in orig_set:
-            html.append(f"<div class='diff-line-add'>+ {_html_escape(line)}</div>")
+            html.append(f"<div> {_html_escape(stripped)}</div>")
     html.append("</div>")
     return "".join(html)
 
@@ -520,8 +521,13 @@ def _render_obligation_table(obligations: List[Dict], obligation_results: Option
     rows = []
     for obl in obligations:
         obl_id = obl.get("id", "")
-        verified = result_map.get(obl_id, True)  # assume pass if no result data
-        status_html = f"<span class='obl-pass'>PASS</span>" if verified else f"<span class='obl-fail'>FAIL</span>"
+        verified = result_map.get(obl_id, None)
+        if verified is None:
+            status_html = "<span class='obl-unknown'>UNKNOWN</span>"
+        elif verified:
+            status_html = "<span class='obl-pass'>PASS</span>"
+        else:
+            status_html = "<span class='obl-fail'>FAIL</span>"
         sev = obl.get("severity", "high")
         sev_class = f"severity-{sev}"
         rows.append(

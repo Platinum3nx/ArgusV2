@@ -32,6 +32,7 @@ def render_expr(expr: IRExpr) -> str:
             return f"(-{render_expr(expr.operand)})"
         if expr.op == "not":
             return f"(¬ {render_expr(expr.operand)})"
+        raise TypeError(f"Unsupported unary op: {expr.op}")
     if isinstance(expr, IRBinaryOp):
         return f"({render_expr(expr.left)} {expr.op} {render_expr(expr.right)})"
     if isinstance(expr, IRCompare):

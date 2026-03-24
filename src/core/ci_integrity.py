@@ -17,7 +17,7 @@ from .reporter import FileReport
 from .equivalence import run_equivalence_check
 from .semantic_guard import run_semantic_guard
 from .translator import ASTTranslator, DafnyTranslator
-from .verifier import LeanVerifier
+from .verifier import DafnyVerifier, LeanVerifier
 
 
 @dataclass(frozen=True)
@@ -400,13 +400,14 @@ def _evaluate_mutation_with_lean(code: str) -> Verdict:
 
         if _contains_loop(code):
             translation = DafnyTranslator().translate(code, policy_result.obligations, preconditions)
+            verifier = DafnyVerifier(require_docker=False)
         else:
             translation = ASTTranslator().translate(code, policy_result.obligations, preconditions)
+            verifier = LeanVerifier(require_docker=False)
 
         if not translation.success:
             return Verdict.UNVERIFIED
 
-        verifier = LeanVerifier(require_docker=False)
         result = verifier.verify(translation.code, policy_result.obligations)
         if result.verification_error:
             return Verdict.ERROR

@@ -63,6 +63,14 @@ def run_semantic_guard(
     is_lean = bool(re.search(r"\btheorem\b|\bdef\b", stripped))
     is_dafny = bool(re.search(r"\bmethod\b", stripped))
 
+    if obligations and not is_lean and not is_dafny:
+        issues.append(
+            SemanticGuardIssue(
+                code="UNRECOGNIZED_TRANSLATION_FORMAT",
+                message="Translated code matches neither Lean nor Dafny patterns",
+            )
+        )
+
     for obligation in obligations:
         theorem_name = _obligation_theorem_name(obligation.id)
         fn_name = obligation.id.split(":", 1)[0]

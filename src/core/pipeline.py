@@ -235,10 +235,9 @@ class ArgusPipeline:
                 "issues": [{"code": issue.code, "message": issue.message} for issue in guard.issues],
             },
         )
-        engine_selection = self.router.select_engine(python_code)
         verification = (
             self.lean_verifier.verify(translation.code, policy.obligations)
-            if engine_selection.engine == "lean"
+            if translation.language == "lean"
             else self.dafny_verifier.verify(translation.code, policy.obligations)
         )
 
@@ -381,7 +380,7 @@ class ArgusPipeline:
                 verdict=decision.verdict,
                 obligations=policy.obligations,
                 assumptions=merged_assumptions,
-                engine=engine_selection.engine,
+                engine=translation.language,
                 message=decision.reason if decision.reason else verification.error_message,
                 repaired_code=repaired_code,
             )

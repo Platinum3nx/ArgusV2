@@ -290,6 +290,7 @@ def _eval_ir_expr(expr: IRExpr, env: Dict[str, Any]) -> Any:
             return -value
         if expr.op == "not":
             return not value
+        raise RuntimeError(f"Unsupported IR unary op: {expr.op}")
     if isinstance(expr, IRBinaryOp):
         left = _eval_ir_expr(expr.left, env)
         right = _eval_ir_expr(expr.right, env)
@@ -303,6 +304,7 @@ def _eval_ir_expr(expr: IRExpr, env: Dict[str, Any]) -> Any:
             return left // right
         if expr.op == "%":
             return left % right
+        raise RuntimeError(f"Unsupported IR binary op: {expr.op}")
     if isinstance(expr, IRCompare):
         left = _eval_ir_expr(expr.left, env)
         right = _eval_ir_expr(expr.right, env)

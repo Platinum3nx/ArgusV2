@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import ast
+import re
 from typing import List
 
 from ..ir import PythonIRLowerer, VerificationConditionGenerator
@@ -53,12 +54,13 @@ class DafnyTranslator:
                 error=lowered.error or "Unsupported constructs for Dafny translation",
             )
 
-        return self._translate_loop_fallback(python_code, obligations)
+        return self._translate_loop_fallback(python_code, obligations, assumptions)
 
     def _translate_loop_fallback(
         self,
         python_code: str,
         obligations: List[Obligation],
+        assumptions: List[AssumedInput],
     ) -> TranslationOutcome:
         try:
             tree = ast.parse(python_code)
@@ -75,7 +77,7 @@ class DafnyTranslator:
         for node in tree.body:
             if isinstance(node, ast.FunctionDef):
                 try:
-                    methods.append(self._translate_function(node, obligations))
+                    methods.append(self._translate_function(node, obligations, assumptions))
                 except ValueError as exc:
                     return TranslationOutcome(
                         success=False,
@@ -102,8 +104,9 @@ class DafnyTranslator:
             used_llm=False,
         )
 
-    def _translate_function(self, fn: ast.FunctionDef, obligations: List[Obligation]) -> str:
+    def _translate_function(self, fn: ast.FunctionDef, obligations: List[Obligation], assumptions: List[AssumedInput]) -> str:
         relevant = [item for item in obligations if item.id.split(":", 1)[0] == fn.name]
+        relevant_assumptions = self._filter_assumptions_for_function(fn, assumptions)
         unsupported_categories = {
             item.category for item in relevant if item.category not in {"non_negativity", "loop_invariant"}
         }
@@ -115,6 +118,8 @@ class DafnyTranslator:
         params = ", ".join(self._render_param(arg) for arg in fn.args.args)
         return_type = self._return_type(fn.returns)
         lines = [f"method {fn.name}({params}) returns (result: {return_type})"]
+        for assumption in relevant_assumptions:
+            lines.append(f"  requires {assumption.property}")
         for item in relevant:
             if item.category == "non_negativity" and return_type == "int":
                 lines.append("  ensures result >= 0")
@@ -130,6 +135,36 @@ class DafnyTranslator:
 
         lines.append("}")
         return "\n".join(lines)
+
+    def _filter_assumptions_for_function(
+        self,
+        fn: ast.FunctionDef,
+        assumptions: List[AssumedInput],
+    ) -> List[AssumedInput]:
+        fn_params = {arg.arg for arg in fn.args.args}
+        relevant: List[AssumedInput] = []
+        for assumption in assumptions:
+            names = self._assumption_identifiers(assumption.property)
+            if not names or names.issubset(fn_params):
+                relevant.append(assumption)
+        return relevant
+
+    def _assumption_identifiers(self, property_text: str) -> set[str]:
+        try:
+            tree = ast.parse(property_text, mode="eval")
+            identifiers = {
+                node.id
+                for node in ast.walk(tree)
+                if isinstance(node, ast.Name)
+            }
+        except SyntaxError:
+            identifiers = set(re.findall(r"\b[A-Za-z_][A-Za-z0-9_]*\b", property_text))
+
+        return {
+            name
+            for name in identifiers
+            if name not in {"and", "or", "not", "True", "False", "len", "abs", "min", "max"}
+        }
 
     def _translate_statements(self, statements: List[ast.stmt], indent: str) -> List[str]:
         out: List[str] = []
