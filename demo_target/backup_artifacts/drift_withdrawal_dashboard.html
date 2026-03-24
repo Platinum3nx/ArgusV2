@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ArgusV2 Mission Control — 2026-03-24T04-12</title>
+<style>
+:root {
+  --bg: #0d1117;
+  --bg2: #161b22;
+  --bg3: #21262d;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-muted: #8b949e;
+  --verified: #3fb950;
+  --verified-bg: #0f2d1a;
+  --fixed: #d29922;
+  --fixed-bg: #2d1f00;
+  --vulnerable: #f85149;
+  --vulnerable-bg: #2d0f0f;
+  --unverified: #f0883e;
+  --unverified-bg: #2d1800;
+  --error: #6e7681;
+  --error-bg: #1c1e20;
+  --accent: #58a6ff;
+  --anthropic: #d97757;
+  --lean: #7c3aed;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+a { color: var(--accent); text-decoration: none; }
+
+/* Header */
+.header {
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  padding: 16px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.header-logo {
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(135deg, var(--accent), var(--lean));
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: bold;
+}
+.header-title { font-size: 18px; font-weight: 700; }
+.header-subtitle { font-size: 12px; color: var(--text-muted); }
+.header-meta {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.provider-badge {
+  background: #2a1e12;
+  border: 1px solid var(--anthropic);
+  color: var(--anthropic);
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.run-id { font-family: monospace; color: var(--text-muted); }
+
+/* Layout */
+.container { max-width: 1200px; margin: 0 auto; padding: 24px 32px; }
+
+/* Executive Summary */
+.exec-summary {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+}
+.exec-summary h2 { font-size: 16px; font-weight: 700; margin-bottom: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+.exec-tagline { font-size: 20px; font-weight: 600; margin-bottom: 16px; }
+.exec-tagline.clear { color: var(--verified); }
+.exec-tagline.attention { color: var(--fixed); }
+.exec-tagline.critical { color: var(--vulnerable); }
+.verdict-counts {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.count-card {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 20px;
+  text-align: center;
+  min-width: 100px;
+}
+.count-card .number { font-size: 28px; font-weight: 700; font-family: monospace; }
+.count-card .label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); }
+.count-card.verified .number { color: var(--verified); }
+.count-card.fixed .number { color: var(--fixed); }
+.count-card.vulnerable .number { color: var(--vulnerable); }
+.count-card.unverified .number { color: var(--unverified); }
+.count-card.error .number { color: var(--error); }
+.risk-badge {
+  display: inline-block;
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 700;
+  margin-top: 16px;
+}
+.risk-badge.clear { background: var(--verified-bg); color: var(--verified); border: 1px solid var(--verified); }
+.risk-badge.attention { background: var(--fixed-bg); color: var(--fixed); border: 1px solid var(--fixed); }
+.risk-badge.critical { background: var(--vulnerable-bg); color: var(--vulnerable); border: 1px solid var(--vulnerable); }
+
+/* Pipeline Timeline */
+.timeline {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+}
+.timeline h2 { font-size: 16px; font-weight: 700; margin-bottom: 20px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+.timeline-stages {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  flex-wrap: wrap;
+  row-gap: 12px;
+}
+.stage {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+.stage-box {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 16px;
+  text-align: center;
+  min-width: 100px;
+  transition: border-color 0.2s;
+}
+.stage-box.active { border-color: var(--verified); }
+.stage-box.skipped { opacity: 0.4; }
+.stage-icon { font-size: 18px; margin-bottom: 4px; }
+.stage-name { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+.stage-desc { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+.stage-arrow { color: var(--border); font-size: 20px; padding: 0 6px; }
+
+/* File Cards */
+.section-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 12px;
+  margin-top: 8px;
+}
+.file-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  margin-bottom: 16px;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+.file-card:hover { border-color: #444c56; }
+.file-header {
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  user-select: none;
+}
+.file-header:hover { background: var(--bg3); }
+.file-info { display: flex; align-items: center; gap: 12px; }
+.file-icon { font-size: 20px; }
+.file-name { font-family: monospace; font-size: 15px; font-weight: 600; }
+.file-engine { font-size: 11px; color: var(--text-muted); }
+.file-right { display: flex; align-items: center; gap: 12px; }
+.verdict-badge {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.verdict-badge.VERIFIED { background: var(--verified-bg); color: var(--verified); border: 1px solid var(--verified); }
+.verdict-badge.FIXED { background: var(--fixed-bg); color: var(--fixed); border: 1px solid var(--fixed); }
+.verdict-badge.VULNERABLE { background: var(--vulnerable-bg); color: var(--vulnerable); border: 1px solid var(--vulnerable); }
+.verdict-badge.UNVERIFIED { background: var(--unverified-bg); color: var(--unverified); border: 1px solid var(--unverified); }
+.verdict-badge.ERROR { background: var(--error-bg); color: var(--error); border: 1px solid var(--error); }
+.chevron { font-size: 14px; color: var(--text-muted); transition: transform 0.2s; }
+.chevron.open { transform: rotate(180deg); }
+
+.file-body { border-top: 1px solid var(--border); display: none; }
+.file-body.open { display: block; }
+.file-section { padding: 20px; border-bottom: 1px solid var(--border); }
+.file-section:last-child { border-bottom: none; }
+.file-section-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); margin-bottom: 12px; }
+
+/* Obligation table */
+.obligation-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.obligation-table th { text-align: left; padding: 8px 12px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); border-bottom: 1px solid var(--border); }
+.obligation-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); }
+.obligation-table tr:last-child td { border-bottom: none; }
+.obl-pass { color: var(--verified); font-weight: 700; }
+.obl-fail { color: var(--vulnerable); font-weight: 700; }
+.obl-unknown { color: var(--unverified); font-weight: 700; }
+.obl-id { font-family: monospace; font-size: 12px; }
+.severity-critical { color: var(--vulnerable); }
+.severity-high { color: var(--unverified); }
+.severity-medium { color: var(--fixed); }
+.severity-low { color: var(--text-muted); }
+
+/* Message box */
+.message-box {
+  background: var(--bg3);
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-family: monospace;
+  font-size: 13px;
+  color: var(--text-muted);
+  border-left: 3px solid var(--border);
+}
+.message-box.vulnerable { border-left-color: var(--vulnerable); color: #f8a5a2; }
+.message-box.verified { border-left-color: var(--verified); color: #7ee787; }
+.message-box.fixed { border-left-color: var(--fixed); color: #e3b341; }
+
+/* Action items */
+.action-box {
+  background: var(--vulnerable-bg);
+  border: 1px solid var(--vulnerable);
+  border-radius: 8px;
+  padding: 14px 16px;
+}
+.action-box p { margin-top: 6px; font-size: 13px; color: #f8a5a2; }
+.action-title { font-size: 13px; font-weight: 700; color: var(--vulnerable); }
+
+/* Code panels */
+.code-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.code-panel { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.code-panel-header { padding: 8px 14px; background: var(--bg3); border-bottom: 1px solid var(--border); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; display: flex; align-items: center; gap: 8px; }
+.code-panel-header .lang-badge { background: var(--lean); color: white; border-radius: 4px; padding: 1px 6px; font-size: 10px; }
+.code-panel-header .lang-badge.py { background: #306998; }
+.code-panel-header .lang-badge.fixed { background: var(--verified); color: #0d1117; }
+.code-body { padding: 14px; overflow-x: auto; font-family: "SFMono-Regular", Consolas, monospace; font-size: 12px; line-height: 1.7; white-space: pre; max-height: 300px; overflow-y: auto; }
+.code-body .kw { color: #ff79c6; }
+.code-body .fn { color: #50fa7b; }
+.code-body .str { color: #f1fa8c; }
+.code-body .num { color: #bd93f9; }
+.code-body .comment { color: #6272a4; font-style: italic; }
+.code-body .op { color: #ff79c6; }
+
+/* Diff */
+.diff-line-add { background: #0f2d1a; color: var(--verified); }
+.diff-line-remove { background: #2d0f0f; color: var(--vulnerable); }
+
+/* Assumptions */
+.assumption-list { list-style: none; }
+.assumption-item { padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px; display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+.assumption-item:last-child { border-bottom: none; }
+.assumption-prop { font-family: monospace; color: var(--accent); }
+.assumption-meta { font-size: 11px; color: var(--text-muted); text-align: right; white-space: nowrap; }
+
+/* Audit trail */
+.audit-trail {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  margin-top: 24px;
+}
+.audit-trail h2 { font-size: 16px; font-weight: 700; margin-bottom: 16px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+.audit-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.audit-item { background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; }
+.audit-item-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); margin-bottom: 4px; }
+.audit-item-value { font-family: monospace; font-size: 13px; word-break: break-all; }
+
+/* Footer */
+.footer {
+  margin-top: 48px;
+  padding: 24px 32px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+.footer-brand { font-weight: 600; color: var(--text); }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .code-grid { grid-template-columns: 1fr; }
+  .audit-grid { grid-template-columns: 1fr; }
+  .container { padding: 16px; }
+  .timeline-stages { flex-direction: column; align-items: flex-start; }
+  .stage-arrow { transform: rotate(90deg); }
+}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<header class="header">
+  <div class="header-brand">
+    <div class="header-logo">A</div>
+    <div>
+      <div class="header-title">ArgusV2 Mission Control</div>
+      <div class="header-subtitle">Autonomous DevSecOps Verification</div>
+    </div>
+  </div>
+  <div class="header-meta">
+    <span><span class="run-id">Run: 2026-03-24T04-12</span></span>  <span>2026-03-24 04:13 UTC</span>  <span><span class="provider-badge">⚡ Anthropic claude-sonnet-4-6</span></span>  <span><span style="color:var(--lean)">Lean 4 / Dafny</span></span>
+  </div>
+</header>
+
+<div class="container">
+
+<!-- Executive Summary -->
+<div class="exec-summary">
+  <h2>Executive Summary</h2>
+  <div class="exec-tagline attention">1 vulnerability automatically repaired and re-verified.</div>
+  <div class="verdict-counts">
+    <div class='count-card verified'><div class='number'>0</div><div class='label'>Verified</div></div><div class='count-card fixed'><div class='number'>1</div><div class='label'>Auto-Repaired</div></div><div class='count-card vulnerable'><div class='number'>0</div><div class='label'>Vulnerable</div></div><div class='count-card unverified'><div class='number'>0</div><div class='label'>Unverified</div></div><div class='count-card error'><div class='number'>0</div><div class='label'>Error</div></div>
+  </div>
+  <div>
+    <span class="risk-badge attention">ATTENTION REQUIRED</span>
+  </div>
+</div>
+
+<!-- Pipeline Timeline -->
+<div class="timeline">
+  <h2>Pipeline Stages</h2>
+  <div class="timeline-stages">
+    <div class='stage'><div class='stage-box' style='border-color:var(--verified)'><div class='stage-icon'>🔍</div><div class='stage-name'>Discover</div><div class='stage-desc'>Obligations &amp; invariants</div></div><div class='stage-arrow'>→</div></div><div class='stage'><div class='stage-box' style='border-color:var(--verified)'><div class='stage-icon'>🔄</div><div class='stage-name'>Translate</div><div class='stage-desc'>Python → Lean 4 / Dafny</div></div><div class='stage-arrow'>→</div></div><div class='stage'><div class='stage-box' style='border-color:var(--verified)'><div class='stage-icon'>⚖️</div><div class='stage-name'>Verify</div><div class='stage-desc'>Formal proof check</div></div><div class='stage-arrow'>→</div></div><div class='stage'><div class='stage-box' style='border-color:var(--verified)'><div class='stage-icon'>🔬</div><div class='stage-name'>Proof&nbsp;Search</div><div class='stage-desc'>LLM-guided tactics</div></div><div class='stage-arrow'>→</div></div><div class='stage'><div class='stage-box' style='border-color:var(--verified)'><div class='stage-icon'>🔧</div><div class='stage-name'>Repair</div><div class='stage-desc'>Claude generates fix</div></div><div class='stage-arrow'>→</div></div><div class='stage'><div class='stage-box' style='border-color:var(--verified)'><div class='stage-icon'>✅</div><div class='stage-name'>Re-verify</div><div class='stage-desc'>Proof confirmed</div></div><div class='stage-arrow'>→</div></div><div class='stage'><div class='stage-box' style='border-color:var(--verified)'><div class='stage-icon'>📢</div><div class='stage-name'>Enforce</div><div class='stage-desc'>MR gate &amp; artifacts</div></div></div>
+  </div>
+</div>
+
+<!-- File Results -->
+<div class="section-title">File Verification Results</div>
+<div class='file-card'><div class='file-header' onclick='toggleCard(this)'>  <div class='file-info'>    <span class='file-icon'>🔧</span>    <div>      <div class='file-name'>demo_target/drift_withdrawal.py</div>      <div class='file-engine'>Engine: lean</div>    </div>  </div>  <div class='file-right'>    <span class='verdict-badge FIXED'>FIXED</span>    <span class='chevron'>▼</span>  </div></div><div class='file-body'>  <div class='file-section'>    <div class='file-section-title'>Verification Finding</div>    <div class='message-box fixed'>Repaired and verified</div>    <div class='message-box fixed'>Argus detected a vulnerability and generated a verified repair. Review the repaired code below before merging.</div>  </div>  <div class='file-section'>    <div class='file-section-title'>Security Obligations (1 total)</div>    <table class='obligation-table'><thead><tr><th>Status</th><th>ID</th><th>Property</th><th>Severity</th><th>Description</th></tr></thead><tbody><tr><td><span class='obl-unknown'>UNKNOWN</span></td><td><code class='obl-id'>withdraw:non_negative_result</code></td><td>withdraw(...) &gt;= 0</td><td class='severity-critical'>CRITICAL</td><td style='color:var(--text-muted);font-size:12px;'>Result should remain non-negative under validated inputs</td></tr></tbody></table>  </div>  <div class='file-section'>    <div class='file-section-title'>Assumed Inputs (2 total)</div>    <ul class='assumption-list'><li class='assumption-item'><span class='assumption-prop'>balance &gt;= 0</span><span class='assumption-meta'>policy: AccountPolicy.v1<br><code>EID-BAL-01</code></span></li><li class='assumption-item'><span class='assumption-prop'>amount &gt;= 0</span><span class='assumption-meta'>api_schema: WithdrawalRequest.schema.v2<br><code>EID-AMT-01</code></span></li></ul>  </div>  <div class='file-section'><div class='file-section-title'>Code Artifacts</div><div class='code-grid'><div class='code-panel'><div class='code-panel-header'><span class='lang-badge py'>PYTHON</span> Source Code</div><div class='code-body'>&quot;&quot;&quot;
+Demo Scenario 3 — Subtle Drift (expected verdict: FIXED)
+
+This function looks safe at first glance but has a subtle overflow risk.
+The fee calculation can push the result below zero when both amount and fee
+are deducted from a small balance.
+
+This is the &quot;drift&quot; scenario: code that passes manual review but fails
+formal proof on the original implementation, then re-verifies after repair.
+
+Narrative: &quot;This function looks safe. But the fee calculation means balance
+can go negative: withdraw(10, 9) → 10 - 9 - 0 = 1 (ok), but
+withdraw(10, 10) → 10 - 10 - 1 = -1 (negative balance!). Argus catches
+what code review misses and repairs it before merge.&quot;
+&quot;&quot;&quot;
+
+
+def withdraw(balance: int, amount: int) -&gt; int:
+    &quot;&quot;&quot;Withdraw funds with a 10% processing fee.
+
+    BUG: fee is computed on amount, but both are subtracted from balance.
+    When amount is at or near balance, the fee deduction pushes result negative.
+    Example: withdraw(10, 10) == -1  &lt;- unauthorized fund creation
+    &quot;&quot;&quot;
+    fee = amount // 10
+    return balance - amount - fee
+</div></div><div class='code-panel'><div class='code-panel-header'><span class='lang-badge '>LEAN 4</span> Lean 4 Proof Obligations</div><div class='code-body'>import Mathlib.Tactic.SplitIfs
+import Mathlib.Tactic.Linarith
+
+def withdraw (balance : Int) (amount : Int) : Int :=
+  (let fee := (amount / 10); ((balance - amount) - fee))
+
+theorem withdraw_non_negative_result (balance : Int) (amount : Int) (h_assump_1 : (balance ≥ 0)) (h_assump_2 : (amount ≥ 0)) : (withdraw balance amount ≥ 0) := by
+  unfold withdraw
+  try split_ifs at *
+  simp_all
+  try linarith
+  try omega
+  -- OBLIGATION: withdraw(...) &gt;= 0
+  -- CATEGORY: non_negativity
+  -- ASSUMED INPUT 1: balance &gt;= 0
+  -- ASSUMED INPUT 2: amount &gt;= 0
+
+</div></div></div></div></div></div>
+
+<!-- Audit Trail -->
+<div class="audit-trail">
+  <h2>Audit Trail &amp; Provenance</h2>
+  <div class="audit-grid">
+    <div class='audit-item'><div class='audit-item-label'>Provider</div><div class='audit-item-value'>Anthropic claude-sonnet-4-6</div></div><div class='audit-item'><div class='audit-item-label'>Model</div><div class='audit-item-value'>claude-sonnet-4-6</div></div><div class='audit-item'><div class='audit-item-label'>Run ID</div><div class='audit-item-value'>2026-03-24T04-12-07-770869Z</div></div><div class='audit-item'><div class='audit-item-label'>Timestamp</div><div class='audit-item-value'>2026-03-24T04:13:05</div></div><div class='audit-item'><div class='audit-item-label'>Files Audited</div><div class='audit-item-value'>1</div></div><div class='audit-item'><div class='audit-item-label'>Max Repair Attempts</div><div class='audit-item-value'>3</div></div><div class='audit-item'><div class='audit-item-label'>Proof Search</div><div class='audit-item-value'>True</div></div><div class='audit-item'><div class='audit-item-label'>Trace Root</div><div class='audit-item-value'>.argus-trace</div></div>
+  </div>
+</div>
+
+</div>
+
+<!-- Footer -->
+<footer class="footer">
+  <div>
+    <span class="footer-brand">ArgusV2</span> — Autonomous DevSecOps Agent
+    &nbsp;·&nbsp; Claude proposes. Lean disposes. Argus enforces.
+  </div>
+  <div>Version 2.1.0 · CC0 License</div>
+</footer>
+
+<!-- Embedded data for JS (no external fetch) -->
+<script type="application/json" id="argus-data">{
+  "run_id": "2026-03-24T04-12-07-770869Z",
+  "provider": "anthropic",
+  "model": "claude-sonnet-4-6",
+  "summary": {
+    "total": 1,
+    "verified": 0,
+    "fixed": 1,
+    "vulnerable": 0,
+    "unverified": 0,
+    "error": 0
+  },
+  "risk": "attention"
+}</script>
+<script>
+function toggleCard(el) {
+  var card = el.closest('.file-card');
+  var body = card.querySelector('.file-body');
+  var chevron = card.querySelector('.chevron');
+  var isOpen = body.classList.contains('open');
+  body.classList.toggle('open', !isOpen);
+  chevron.classList.toggle('open', !isOpen);
+}
+
+function initDashboard(data) {
+  // Nothing needs to be done at init — all rendering is server-side HTML.
+  // This function is available for future progressive enhancement.
+  console.log('[ArgusV2 Dashboard] Loaded. Run ID:', data.run_id || 'n/a');
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  var dataEl = document.getElementById('argus-data');
+  if (dataEl) {
+    try { initDashboard(JSON.parse(dataEl.textContent)); }
+    catch(e) { console.warn('ArgusV2: could not parse embedded data', e); }
+  }
+});
+</script>
+</body>
+</html>

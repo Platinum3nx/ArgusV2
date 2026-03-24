@@ -12,6 +12,8 @@ log = logging.getLogger(__name__)
 MAX_RETRIES = 3
 BACKOFF_BASE = 2  # seconds: 2, 4, 8
 RETRYABLE_STATUS = {429, 500, 502, 503, 504}
+DEFAULT_CONNECT_TIMEOUT_SECONDS = 5.0
+DEFAULT_READ_TIMEOUT_SECONDS = 45.0
 
 
 # ---------------------------------------------------------------------------
@@ -47,11 +49,20 @@ class LLMClient:
 class ProxyClient(LLMClient):
     """Calls the hosted Argus proxy which holds the Anthropic API key."""
 
-    def __init__(self, model: str, proxy_url: str, proxy_token: str) -> None:
+    def __init__(
+        self,
+        model: str,
+        proxy_url: str,
+        proxy_token: str,
+        connect_timeout_seconds: float = DEFAULT_CONNECT_TIMEOUT_SECONDS,
+        read_timeout_seconds: float = DEFAULT_READ_TIMEOUT_SECONDS,
+    ) -> None:
         self.provider_name = "anthropic"
         self.model_id = model
         self.proxy_url = proxy_url
         self.proxy_token = proxy_token
+        self.connect_timeout_seconds = max(1.0, float(connect_timeout_seconds))
+        self.read_timeout_seconds = max(1.0, float(read_timeout_seconds))
 
     def generate(self, contents: str) -> str:
         last_exc: Exception | None = None
@@ -65,7 +76,7 @@ class ProxyClient(LLMClient):
                         "max_tokens": 4096,
                     },
                     headers={"X-Argus-Token": self.proxy_token},
-                    timeout=120,
+                    timeout=(self.connect_timeout_seconds, self.read_timeout_seconds),
                 )
                 if response.status_code not in RETRYABLE_STATUS:
                     response.raise_for_status()
@@ -125,6 +136,14 @@ def create_llm_client(provider: str | None = None, model: str | None = None) -> 
 
     proxy_token = os.getenv("ARGUS_PROXY_TOKEN", "").strip()
     proxy_url = os.getenv("ARGUS_PROXY_URL", DEFAULT_PROXY_URL).rstrip("/")
+    connect_timeout_seconds = _read_timeout_env(
+        "ARGUS_PROXY_CONNECT_TIMEOUT_SECONDS",
+        DEFAULT_CONNECT_TIMEOUT_SECONDS,
+    )
+    read_timeout_seconds = _read_timeout_env(
+        "ARGUS_PROXY_READ_TIMEOUT_SECONDS",
+        DEFAULT_READ_TIMEOUT_SECONDS,
+    )
 
     if not proxy_token:
         raise ConfigurationError(
@@ -132,4 +151,27 @@ def create_llm_client(provider: str | None = None, model: str | None = None) -> 
         )
 
     resolved_model = model or "claude-sonnet-4-6"
-    return ProxyClient(model=resolved_model, proxy_url=proxy_url, proxy_token=proxy_token)
+    return ProxyClient(
+        model=resolved_model,
+        proxy_url=proxy_url,
+        proxy_token=proxy_token,
+        connect_timeout_seconds=connect_timeout_seconds,
+        read_timeout_seconds=read_timeout_seconds,
+    )
+
+
+def _read_timeout_env(name: str, default: float) -> float:
+    raw = os.getenv(name, "").strip()
+    if not raw:
+        return default
+
+    try:
+        value = float(raw)
+    except ValueError:
+        log.warning("Invalid %s=%r; using default %.1fs", name, raw, default)
+        return default
+
+    if value <= 0:
+        log.warning("Non-positive %s=%r; using default %.1fs", name, raw, default)
+        return default
+    return value

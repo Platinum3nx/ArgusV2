@@ -14,6 +14,8 @@ def test_factory_returns_proxy_client_with_default_model(monkeypatch: pytest.Mon
     assert isinstance(client, ProxyClient)
     assert client.provider_name == "anthropic"
     assert client.model_id == "claude-sonnet-4-6"
+    assert client.connect_timeout_seconds == 5.0
+    assert client.read_timeout_seconds == 45.0
 
 
 def test_factory_returns_proxy_client_with_custom_model(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -22,6 +24,28 @@ def test_factory_returns_proxy_client_with_custom_model(monkeypatch: pytest.Monk
     assert isinstance(client, ProxyClient)
     assert client.provider_name == "anthropic"
     assert client.model_id == "claude-opus-4-6"
+
+
+def test_factory_reads_timeout_overrides(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("ARGUS_PROXY_TOKEN", "token")
+    monkeypatch.setenv("ARGUS_PROXY_CONNECT_TIMEOUT_SECONDS", "7")
+    monkeypatch.setenv("ARGUS_PROXY_READ_TIMEOUT_SECONDS", "19.5")
+
+    client = create_llm_client()
+    assert isinstance(client, ProxyClient)
+    assert client.connect_timeout_seconds == 7.0
+    assert client.read_timeout_seconds == 19.5
+
+
+def test_factory_ignores_invalid_timeout_overrides(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("ARGUS_PROXY_TOKEN", "token")
+    monkeypatch.setenv("ARGUS_PROXY_CONNECT_TIMEOUT_SECONDS", "bogus")
+    monkeypatch.setenv("ARGUS_PROXY_READ_TIMEOUT_SECONDS", "-1")
+
+    client = create_llm_client()
+    assert isinstance(client, ProxyClient)
+    assert client.connect_timeout_seconds == 5.0
+    assert client.read_timeout_seconds == 45.0
 
 
 def test_factory_rejects_non_anthropic_provider(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -70,6 +94,35 @@ def test_proxy_client_retries_and_succeeds(monkeypatch: pytest.MonkeyPatch) -> N
     c = ProxyClient(model="claude-sonnet-4-6", proxy_url="http://proxy", proxy_token="tok")
     assert c.generate("hello") == "ok"
     assert calls["n"] == 3
+
+
+def test_proxy_client_uses_connect_and_read_timeouts(monkeypatch: pytest.MonkeyPatch) -> None:
+    captured: dict[str, object] = {}
+
+    class GoodResp:
+        status_code = 200
+
+        def raise_for_status(self) -> None:
+            return None
+
+        def json(self):
+            return {"text": "ok"}
+
+    def fake_post(*args, **kwargs):
+        captured["timeout"] = kwargs["timeout"]
+        return GoodResp()
+
+    monkeypatch.setattr("src.core.llm_provider.requests.post", fake_post)
+    c = ProxyClient(
+        model="claude-sonnet-4-6",
+        proxy_url="http://proxy",
+        proxy_token="tok",
+        connect_timeout_seconds=3,
+        read_timeout_seconds=11,
+    )
+
+    assert c.generate("hello") == "ok"
+    assert captured["timeout"] == (3.0, 11.0)
 
 
 def test_proxy_client_raises_on_invalid_payload(monkeypatch: pytest.MonkeyPatch) -> None:

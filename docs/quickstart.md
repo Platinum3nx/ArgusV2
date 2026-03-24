@@ -37,6 +37,15 @@ After pipeline completion, verify:
   - `argus-ci-gates.json` — 11-gate CI integrity results
   - `.argus-trace/` — Full audit trail with Lean proofs and repair artifacts
 
+## Supported test command
+
+```bash
+pytest
+```
+
+`pytest.ini` scopes default collection to `tests/`, so the supported suite is
+the one you get by default. Use `pytest tests -q` if you want the explicit form.
+
 ## 30-second local sanity run
 
 ```bash
@@ -62,11 +71,11 @@ Three purpose-built scenarios show the full Argus story:
 python -m src.adapters.cli --file demo_target/safe_transfer.py \
   --allow-local-verify --provider anthropic
 
-# Scenario 2: Vulnerable → Argus catches + auto-repairs
+# Scenario 2: Vulnerable path — Argus catches the bug and re-verifies the repair
 python -m src.adapters.cli --file demo_target/vulnerable_transfer.py \
   --allow-local-verify --provider anthropic
 
-# Scenario 3: Subtle drift — formal proof catches what review misses
+# Scenario 3: Subtle drift — formal proof catches what review misses and repairs
 python -m src.adapters.cli --file demo_target/drift_withdrawal.py \
   --allow-local-verify --provider anthropic
 ```
@@ -85,8 +94,8 @@ python -m src.adapters.cli --provider anthropic --file <file> --allow-local-veri
 | Agent identity | `config.yml`, `.gitlab/duo/agent-config.yml` |
 | Public flow | `.gitlab/duo/flows/argus_verify.yml` |
 | CI event trigger | `.gitlab-ci.yml` (`argus-verify` MR rules) |
-| Anthropic integration | `src/core/llm_provider.py` — `AnthropicClient` |
-| Test suite | `tests/` — 133 tests, 100% passing |
+| Hosted LLM integration | `src/core/llm_provider.py` — `ProxyClient` |
+| Test suite | `tests/` — 204 tests, 100% passing |
 | Reliability evidence | `docs/reliability-report.md`, `artifacts/phase3/` |
 | Demo script | `docs/demo-script.md` |
 | Architecture | `docs/architecture.md` |

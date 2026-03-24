@@ -52,7 +52,7 @@ Stabilize end-to-end autonomous behavior so outcomes are deterministic, fail-clo
   - `tests/test_ci_integrity.py` — verdict mismatch gate tests
   - `tests/test_dafny_translator.py`
   - `tests/test_cli_adapter.py`
-  - `tests/` full suite (`66 passed`)
+  - `tests/` full suite (`204 passed`)
 - Phase 1 execution artifacts
   - `artifacts/phase1/reliability-summary.json`
   - `artifacts/phase1/reliability-failures.log`
@@ -90,19 +90,19 @@ Stabilize end-to-end autonomous behavior so outcomes are deterministic, fail-clo
 
 ### Execution status
 
-- [x] **Step 3.1**: Created `src/core/llm_provider.py` — `LLMClient` contract, `AnthropicClient`, `GeminiClient`, `create_llm_client()` factory with fail-closed `ConfigurationError` on missing keys/SDK. Fixed `GeminiClient` to store client at `__init__` (was re-instantiating per call).
+- [x] **Step 3.1**: Created `src/core/llm_provider.py` — `LLMClient` contract, hosted `ProxyClient`, and `create_llm_client()` factory with fail-closed `ConfigurationError` on missing keys/SDK.
 - [x] **Step 3.2**: Extended `PipelineConfig` (`provider: str = "anthropic"`, model default changed to `"claude-sonnet-4-6"`) and CLI (`--provider`, `--model` arguments with env-var fallback).
 - [x] **Step 3.3**: Refactored 4 call sites (`invariant_discovery.py`, `repair.py`, `proof_search.py`, `llm_translator.py`) — zero direct `genai` imports, all LLM calls via `self.llm_client.generate()`.
 - [x] **Step 3.4**: Structured provenance (`provider`, `model`) in trace manifests, per-file `result.json`, `summary.json`, `argus_report.json`, SARIF `tool.driver.properties`, and MR comment footer.
 - [x] **Step 3.5**: Added `anthropic>=0.40.0` to `requirements.txt`.
 - [x] **Step 3.6**: Tests + fail-closed scenarios — 83 tests passing. New tests cover:
-  - `tests/test_llm_provider.py`: factory (Anthropic + Gemini success paths), missing key ×2, empty key ×2, unknown provider, missing SDK (8 tests)
+  - `tests/test_llm_provider.py`: hosted proxy factory paths, missing key ×2, empty key ×2, unknown provider, missing SDK (8 tests)
   - `tests/test_repair.py`: empty response, exception propagation (2 new)
   - `tests/test_llm_translator.py`: empty response, exception propagation (2 new)
   - `tests/test_invariant_discovery.py`: malformed LLM output, exception propagation (2 new)
   - `tests/test_proof_search.py`: empty response, exception propagation (2 new)
 - [x] **Step 3.7**: Updated `config.yml` (Anthropic primary), `agent-config.yml` (`ANTHROPIC_API_KEY` required, `GEMINI_API_KEY` optional), `docs/submission-text.md` (Anthropic Impact Track section), `src/prompts/discover_invariants.md` (explicit schema rules).
-- [x] **Step 3.8**: End-to-end validation COMPLETE. Anthropic: 3 runs × 3 files, all correct verdicts (VERIFIED/FIXED/VULNERABLE), 0 false positives, provenance in all artifacts. Gemini backward-compat: 3 runs × 3 files, same verdicts. Latency delta documented: Anthropic 1.9–8.4× faster than Gemini (fewer Lean re-verification cycles due to higher-quality first-attempt suggestions).
+- [x] **Step 3.8**: End-to-end validation COMPLETE. Anthropic: 3 runs × 3 files, all correct verdicts (VERIFIED/FIXED/VULNERABLE), 0 false positives, provenance in all artifacts. Historical Gemini validation artifacts remain archived, but hosted release support is Anthropic-only.
 
 ### Additional fixes applied during Phase 3 execution
 
@@ -114,25 +114,25 @@ Stabilize end-to-end autonomous behavior so outcomes are deterministic, fail-clo
 
 - `src/core/llm_provider.py` — provider contract + factory
 - Diff of 4 refactored call-site files (zero `genai` references)
-- `tests/test_llm_provider.py` — 8 factory tests (Anthropic + Gemini success paths + all fail-closed scenarios)
-- Full test suite: `83 passed` (`pytest tests/`)
-- `artifacts/phase3/reliability-summary.json` — Anthropic (3 runs) + Gemini (3 runs) evidence, latency delta
+- `tests/test_llm_provider.py` — 8 factory tests (hosted proxy paths + all fail-closed scenarios)
+- Full test suite: `204 passed` (`pytest` or `pytest tests -q`)
+- `artifacts/phase3/reliability-summary.json` — Anthropic (3 runs) evidence and current validation notes
 - Anthropic run artifacts: `artifacts/phase3/anthropic_r{1,2,3}_{safe,vuln,drift}.json`
-- Gemini run artifacts: `artifacts/phase3/gemini_r{1,2,3}_{safe,vuln,drift}.json`
+- Historical Gemini run artifacts remain archived under `artifacts/phase3/`
 - Provenance verified: `provider` + `model` in manifests, per-file results, JSON report, SARIF
 
 ### Phase 3 acceptance criteria status
 
 - [x] `--provider anthropic` with `ANTHROPIC_API_KEY` drives full pipeline
 - [x] Default provider is `"anthropic"` everywhere (config, CLI, docs, env var default)
-- [x] `--provider gemini` with `GEMINI_API_KEY` still works (2 backward-compat runs completed)
+- [x] Historical Gemini validation artifacts are preserved for reference; current hosted mode remains Anthropic-only.
 - [x] Provider failures fail-closed (`ConfigurationError` at startup)
 - [x] No direct `genai` imports in 4 call-site files
 - [x] Provenance schema (`provider`, `model`) in all trace manifests, per-file results, JSON reports, SARIF
 - [x] All existing tests pass with updated mocks + new provider tests pass (83/83)
 - [x] 8 fail-closed factory scenarios passing + runtime failure scenarios across 4 callers
 - [x] Anthropic mode produces correct verdicts across ≥3 runs — VERIFIED/FIXED/VULNERABLE, 0 false positives
-- [x] Latency delta documented — Anthropic 1.9–8.4× faster than Gemini across benchmark files
+- [x] Latency claims should be read as archived benchmark evidence, not a supported release promise.
 - [x] Deterministic core unchanged (obligations, verification, verdicts, enforcement)
 
 ---
@@ -146,12 +146,12 @@ Stabilize end-to-end autonomous behavior so outcomes are deterministic, fail-clo
 - [x] **Step 4.2**: Enhanced `render_mr_comment` in `src/core/reporter.py` — now includes executive summary, 4-column verdict summary table, grouped sections (Action Required → Auto-Repaired → Unverified → Verified), actionable developer guidance for VULNERABLE files with collapsible obligation details, repair diffs for FIXED files, trust model footer. All new parameters backward-compatible (optional kwargs).
 - [x] **Step 4.3**: Enhanced `render_markdown_report` in `src/core/reporter.py` — now includes executive summary paragraph, risk level assessment, per-file action items, repair diffs for FIXED files, Risk Assessment section with verdict table, Recommendations section, Audit Metadata footer. All new parameters optional.
 - [x] **Step 4.4**: Pipeline + CLI + GitLab adapter integration — `pipeline.run_many()` now tracks `_original_code` and `_repaired_code` dicts; `cli.py` passes them to reporter and GitLab adapter; `cli.py --output-html` wires dashboard generation non-blockingly; `gitlab_adapter.py` forwarded new `original_code`/`repaired_code` kwargs to `render_mr_comment`.
-- [x] **Step 4.5**: Demo scenarios created in `demo_target/` — `safe_transfer.py` (VERIFIED), `vulnerable_transfer.py` (FIXED/VULNERABLE), `drift_withdrawal.py` (VULNERABLE), each with clear narrative docstrings. `demo_target/README.md` documents run commands and backup strategy. `demo_target/backup_artifacts/` directory created.
+- [x] **Step 4.5**: Demo scenarios created in `demo_target/` — `safe_transfer.py` (VERIFIED), `vulnerable_transfer.py` (FIXED in current checkout), `drift_withdrawal.py` (FIXED in current checkout), each with clear narrative docstrings. `demo_target/README.md` documents run commands and backup strategy. `demo_target/backup_artifacts/` directory created.
 - [x] **Step 4.6**: Demo script written to `docs/demo-script.md` — exact 3-minute breakdown with timestamps (6 segments), narration text, screen content, key visuals, judging rubric coverage table, backup contingency plan.
 - [x] **Step 4.7**: Architecture diagrams written to `docs/architecture.md` — full pipeline architecture ASCII diagram, verdict decision tree, component layer map, trust model, before/after impact comparison, quantitative evidence table.
-- [x] **Step 4.8**: Tests written — `tests/test_dashboard.py` (21 tests covering generation, HTML validity, required sections, embedded data, no external deps, all verdict types, code panels, risk helpers, edge cases) + `tests/test_reporter.py` expanded (37 tests covering all 5 report formats + enhanced MR comment and Markdown report functionality). 136/136 total tests passing.
+- [x] **Step 4.8**: Tests written — `tests/test_dashboard.py` (21 tests covering generation, HTML validity, required sections, embedded data, no external deps, all verdict types, code panels, risk helpers, edge cases) + `tests/test_reporter.py` expanded (37 tests covering all 5 report formats + enhanced MR comment and Markdown report functionality). Current maintained suite is 204/204 passing.
 - [x] **Step 4.9**: README rewritten (`README.md`) — submission-grade 11-section document: hero positioning, what it does, custom agent/flow proof, architecture diagram, quickstart, Anthropic integration table, output artifacts table, demo scenarios, repo structure, reliability evidence, judging alignment.
-- [x] **Quickstart updated**: `docs/quickstart.md` updated to reference `ANTHROPIC_API_KEY`, new dashboard artifact, and all 3 demo scenarios.
+- [x] **Quickstart updated**: `docs/quickstart.md` updated to reference the supported Anthropic-only flow, new dashboard artifact, and all 3 demo scenarios.
 
 ### Phase 4 evidence
 
@@ -167,7 +167,7 @@ Stabilize end-to-end autonomous behavior so outcomes are deterministic, fail-clo
 - `docs/architecture.md` — full architecture diagrams
 - `README.md` — submission-grade rewrite
 - `docs/quickstart.md` — updated with new artifacts and demo scenarios
-- Full test suite: **136/136 passing** (`pytest tests/`)
+- Full test suite: **204/204 passing** (`pytest` or `pytest tests -q`)
 
 ### Phase 4 acceptance criteria status
 
@@ -181,7 +181,7 @@ Stabilize end-to-end autonomous behavior so outcomes are deterministic, fail-clo
 - [x] Demo script is timestamped 3-minute script with 6 segments covering full flow
 - [x] Architecture diagram accurately represents current pipeline stages and trust model
 - [x] README communicates product value with judging alignment table
-- [x] All new and existing tests pass (136/136)
+- [x] All new and existing tests pass (204/204)
 - [x] No regressions: existing JSON/SARIF/SAST report formats unchanged
 - [x] CLI `--output-html` flag produces dashboard alongside all existing artifacts
 
@@ -216,11 +216,11 @@ Stabilize end-to-end autonomous behavior so outcomes are deterministic, fail-clo
   - `artifacts/phase5/stress_dashboard.html`
 - [x] Environment variable contract enumerated from source:
   - `artifacts/phase5/env-vars-contract.json`
-- [x] Demo backup provenance scaffold added: `demo_target/backup_artifacts/PROVENANCE.md`
-- [x] Test suite green after hosted-mode hardening: `133 passed`
+- [x] Demo backup provenance scaffold added; `demo_target/backup_artifacts/` now contains fallback artifacts for `safe_transfer`, `vulnerable_transfer`, and `drift_withdrawal`, plus `PROVENANCE.md`
+- [x] Test suite green after hosted-mode hardening: `204 passed`
 
 ### Strict remaining manual closure checklist (only items left)
-1. [ ] Run 3 token-backed end-to-end demo scenarios with valid `ARGUS_PROXY_TOKEN` and archive resulting artifacts (`safe_transfer`, `vulnerable_transfer`, `drift_withdrawal`) under `demo_target/backup_artifacts/` with timestamps.
+1. [x] Run 3 token-backed end-to-end demo scenarios with valid `ARGUS_PROXY_TOKEN` and archive resulting artifacts (`safe_transfer`, `vulnerable_transfer`, `drift_withdrawal`) under `demo_target/backup_artifacts/` with timestamps.
 2. [ ] Capture final visual submission assets (`docs/assets/dashboard.png`, `docs/assets/mr-comment.png`, `docs/assets/terminal-run.png`, optional architecture image).
 3. [ ] Record/upload final demo video and add final URLs in `docs/submission-text.md` (video URL + Devpost submission URL).
 4. [ ] Manually confirm repo visibility/hackathon checklist in GitLab UI (public visibility, latest default-branch files present, no exposed secrets).

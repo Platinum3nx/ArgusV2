@@ -1,0 +1,27 @@
+{
+  "version": "15.0.7",
+  "scan": {
+    "type": "sast",
+    "start_time": "2026-03-24T04:13:05.007461+00:00",
+    "end_time": "2026-03-24T04:13:05.007461+00:00",
+    "status": "success",
+    "analyzer": {
+      "id": "argus-v2",
+      "name": "ArgusV2",
+      "version": "2.1.0",
+      "vendor": {
+        "name": "Argus"
+      }
+    },
+    "scanner": {
+      "id": "argus-v2",
+      "name": "ArgusV2",
+      "version": "2.1.0",
+      "vendor": {
+        "name": "Argus"
+      }
+    }
+  },
+  "vulnerabilities": [],
+  "remediations": []
+}

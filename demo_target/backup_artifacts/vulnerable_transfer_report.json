@@ -1,0 +1,52 @@
+{
+  "tool": "ArgusV2",
+  "provider": "anthropic",
+  "model": "claude-sonnet-4-6",
+  "timestamp": "2026-03-24T04:12:02.611730+00:00",
+  "summary": {
+    "total": 1,
+    "verified": 0,
+    "fixed": 1,
+    "vulnerable": 0,
+    "unverified": 0,
+    "error": 0
+  },
+  "files": [
+    {
+      "filename": "demo_target/vulnerable_transfer.py",
+      "verdict": "FIXED",
+      "engine": "lean",
+      "message": "Repaired and verified",
+      "obligations": [
+        {
+          "id": "transfer:non_negative_result",
+          "property": "transfer(...) >= 0",
+          "category": "non_negativity",
+          "description": "Result should remain non-negative under validated inputs",
+          "severity": "critical",
+          "source": "policy"
+        }
+      ],
+      "assumptions": [
+        {
+          "property": "sender_balance >= 0",
+          "description": "Sender balance must be non-negative before any transfer operation",
+          "justification": "Account balances cannot be negative at rest; enforced by account creation and prior transaction settlement policies",
+          "source_type": "policy",
+          "source_ref": "AccountPolicy.v1",
+          "evidence_id": "EID-BAL-01",
+          "severity": "critical"
+        },
+        {
+          "property": "amount >= 0",
+          "description": "Transfer amount must be a non-negative integer; negative amounts would represent reverse transfers and are disallowed",
+          "justification": "Transfer API schema requires amount to be a non-negative integer field; negative values are rejected at the API boundary",
+          "source_type": "api_schema",
+          "source_ref": "TransferAPI.schema.v1",
+          "evidence_id": "EID-AMT-01",
+          "severity": "critical"
+        }
+      ]
+    }
+  ]
+}

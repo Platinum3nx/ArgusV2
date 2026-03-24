@@ -1,0 +1,52 @@
+{
+  "tool": "ArgusV2",
+  "provider": "anthropic",
+  "model": "claude-sonnet-4-6",
+  "timestamp": "2026-03-24T04:05:11.210214+00:00",
+  "summary": {
+    "total": 1,
+    "verified": 1,
+    "fixed": 0,
+    "vulnerable": 0,
+    "unverified": 0,
+    "error": 0
+  },
+  "files": [
+    {
+      "filename": "demo_target/safe_transfer.py",
+      "verdict": "VERIFIED",
+      "engine": "lean",
+      "message": "All obligations passed",
+      "obligations": [
+        {
+          "id": "transfer:non_negative_result",
+          "property": "transfer(...) >= 0",
+          "category": "non_negativity",
+          "description": "Result should remain non-negative under validated inputs",
+          "severity": "critical",
+          "source": "policy"
+        }
+      ],
+      "assumptions": [
+        {
+          "property": "sender_balance >= 0",
+          "description": "Sender balance must be non-negative before transfer is invoked",
+          "justification": "Account balances are initialized to zero or positive values at account creation and only modified through validated transfer operations; a negative balance cannot arise from correct prior usage",
+          "source_type": "policy",
+          "source_ref": "AccountLifecyclePolicy.v1",
+          "evidence_id": "EID-BAL-01",
+          "severity": "critical"
+        },
+        {
+          "property": "amount >= 0",
+          "description": "Parameter 'amount' is non-negative (domain precondition)",
+          "justification": "Derived deterministically from non_negativity obligation on function parameters",
+          "source_type": "policy",
+          "source_ref": "obligation_policy:derive_preconditions",
+          "evidence_id": "precond:transfer:amount:non_negative",
+          "severity": "high"
+        }
+      ]
+    }
+  ]
+}

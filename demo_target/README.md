@@ -15,18 +15,18 @@ python -m src.adapters.cli --file demo_target/safe_transfer.py \
 
 ## Scenario 2 — Vulnerable → Auto-Repaired (FIXED)
 **File**: `vulnerable_transfer.py`
-**Expected verdict**: `FIXED` (repair succeeds) or `VULNERABLE` (repair insufficient)
-**Narrative**: "Missing bounds check — Argus catches it, fixes it, and proves the fix."
+**Observed verdict in this checkout**: `FIXED`
+**Narrative**: "Missing bounds check — Argus catches it, repairs it, and re-verifies the fix."
 
 ```bash
 python -m src.adapters.cli --file demo_target/vulnerable_transfer.py \
   --allow-local-verify --provider anthropic
 ```
 
-## Scenario 3 — Subtle Drift (VULNERABLE)
+## Scenario 3 — Subtle Drift (FIXED)
 **File**: `drift_withdrawal.py`
-**Expected verdict**: `VULNERABLE`
-**Narrative**: "Looks safe in review. Fails formal proof. Argus catches what humans miss."
+**Observed verdict in this checkout**: `FIXED`
+**Narrative**: "Looks safe in review. Fails formal proof, then re-verifies after repair."
 
 ```bash
 python -m src.adapters.cli --file demo_target/drift_withdrawal.py \
@@ -34,8 +34,8 @@ python -m src.adapters.cli --file demo_target/drift_withdrawal.py \
 ```
 
 ## Backup Artifacts
-Pre-generated run artifacts are in `backup_artifacts/` — use these if the live
-demo API is unavailable or too slow during recording.
+The directory now contains fallback artifacts for all three scenarios plus
+`PROVENANCE.md` with run metadata for the latest regeneration.
 
 ## Full demo run (all three scenarios)
 ```bash

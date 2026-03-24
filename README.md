@@ -106,6 +106,17 @@ open argus_dashboard.html
 
 See [`docs/quickstart.md`](docs/quickstart.md) for the complete walkthrough.
 
+## Testing
+
+Supported local test command:
+
+```bash
+pytest
+```
+
+`pytest.ini` scopes default collection to `tests/`, so `pytest` and
+`pytest tests -q` both exercise the supported suite only.
+
 ---
 
 ## Anthropic Integration
@@ -150,8 +161,8 @@ Three pre-built scenarios in `demo_target/`:
 | File | Expected Verdict | Narrative |
 |:---|:---|:---|
 | `safe_transfer.py` | VERIFIED | "Already safe — Argus confirms mathematically." |
-| `vulnerable_transfer.py` | FIXED | "Missing bounds check — Argus catches and repairs it." |
-| `drift_withdrawal.py` | VULNERABLE | "Looks safe — formal proof exposes the hidden flaw." |
+| `vulnerable_transfer.py` | FIXED | "Missing bounds check — Argus catches it, repairs it, and re-verifies the fix." |
+| `drift_withdrawal.py` | FIXED | "Looks safe — formal proof exposes the hidden flaw, and the repair re-verifies." |
 
 ---
 
@@ -172,7 +183,7 @@ Three pre-built scenarios in `demo_target/`:
 │   │   ├── pipeline.py              # ArgusPipeline orchestrator
 │   │   ├── dashboard.py             # Mission Control HTML generator (Phase 4)
 │   │   ├── reporter.py              # JSON / Markdown / SARIF / MR comment renderers
-│   │   ├── llm_provider.py          # Anthropic LLM client
+│   │   ├── llm_provider.py          # Hosted LLM proxy client (Anthropic-only)
 │   │   ├── obligation_policy.py     # Deterministic obligation derivation
 │   │   ├── invariant_discovery.py   # Claude-powered obligation discovery
 │   │   ├── proof_search.py          # Claude-powered Lean proof repair
@@ -182,9 +193,9 @@ Three pre-built scenarios in `demo_target/`:
 │   │   ├── verdict.py               # Fail-closed verdict computation
 │   │   └── ci_integrity.py          # 11-gate CI integrity suite
 │   └── utils/
-├── tests/                           # 133 tests, 100% passing
+├── tests/                           # 204 tests, 100% passing
 ├── benchmarks/seeded/               # Deterministic benchmark corpus (3 scenarios)
-├── demo_target/                     # Demo scenarios with pre-generated backup artifacts
+├── demo_target/                     # Demo scenarios plus fallback artifacts in demo_target/backup_artifacts/
 ├── docs/
 │   ├── quickstart.md                # Fork-to-action walkthrough
 │   ├── deployment-guide.md          # 3 deployment options (GitLab CI, Docker, local CLI)
@@ -212,8 +223,9 @@ Three pre-built scenarios in `demo_target/`:
 
 | Metric | Value |
 |:---|:---|
-| Test suite | **133/133 passing** |
-| Anthropic end-to-end validation runs | **9/9** (3 files × 3 runs) |
+| Test suite | **204/204 passing** |
+| Current live demo runs | **3/3** (safe, vulnerable, drift) |
+| Historical Anthropic end-to-end validation runs | **9/9** (3 files × 3 runs) |
 | False positives | **0** |
 | Verdict stability | **100%** (same result across repeated runs) |
 | Fail-closed scenarios tested | **14/14** |

@@ -1,17 +1,17 @@
 """
-Demo Scenario 3 — Subtle Drift (expected verdict: VULNERABLE)
+Demo Scenario 3 — Subtle Drift (expected verdict: FIXED)
 
 This function looks safe at first glance but has a subtle overflow risk.
 The fee calculation can push the result below zero when both amount and fee
 are deducted from a small balance.
 
 This is the "drift" scenario: code that passes manual review but fails
-formal proof. Demonstrates Argus's value over human-only code review.
+formal proof on the original implementation, then re-verifies after repair.
 
 Narrative: "This function looks safe. But the fee calculation means balance
 can go negative: withdraw(10, 9) → 10 - 9 - 0 = 1 (ok), but
 withdraw(10, 10) → 10 - 10 - 1 = -1 (negative balance!). Argus catches
-what code review misses."
+what code review misses and repairs it before merge."
 """
 
 

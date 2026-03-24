@@ -1,6 +1,6 @@
 # ArgusV2 Reliability Report
 
-Status: Phase 5 consolidated update (2026-03-16 UTC)
+Status: Phase 5 consolidated update (2026-03-24 UTC)
 
 ## Scope
 Consolidated reliability evidence across Phase 1 and Phase 3+4 outcomes, including fail-closed behavior, verdict stability, and CI integrity gates.
@@ -12,7 +12,7 @@ Consolidated reliability evidence across Phase 1 and Phase 3+4 outcomes, includi
 | Safe-file verdict stability | 100% VERIFIED | 100% VERIFIED | 100% | PASS |
 | Vulnerability-path stability | 100% detect (VULNERABLE/FIXED) | 100% detect (VULNERABLE/FIXED) | 100% | PASS |
 | False VERIFIED rate | 0% | 0% | 0% | PASS |
-| Test suite pass rate | 66/66 | 133/133 | 100% | PASS |
+| Test suite pass rate | 66/66 | 204/204 | 100% | PASS |
 | Fail-closed scenario coverage | validated | 14/14 passing | all pass | PASS |
 
 ## Latency profile
@@ -33,5 +33,8 @@ Consolidated reliability evidence across Phase 1 and Phase 3+4 outcomes, includi
 - `artifacts/phase3/anthropic_r1_drift.json`
 - `artifacts/phase5/mr-comment-stress.json`
 
-## Notes
-Provider-backed reruns in this environment require a configured `ARGUS_PROXY_TOKEN`. Structural reliability checks and test suite validation are complete in this session.
+## Current checkout snapshot
+- Maintained suite: `pytest` or `pytest tests -q` runs `tests/` only and passes `204/204`.
+- Live demo runs in this checkout: `safe_transfer.py` `VERIFIED`, `vulnerable_transfer.py` `FIXED`, `drift_withdrawal.py` `FIXED`.
+- Latest observed runtimes in this checkout: `safe_transfer.py` `10.34s`, `vulnerable_transfer.py` `66.36s`, `drift_withdrawal.py` `57.43s`.
+- Provider-backed reruns in this environment still depend on a configured `ARGUS_PROXY_TOKEN`.
