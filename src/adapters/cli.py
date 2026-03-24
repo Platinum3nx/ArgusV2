@@ -52,7 +52,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--model",
         type=str,
         default=None,
-        help="Model override (default: claude-sonnet-4-6 for anthropic, gemini-2.5-pro for gemini)",
+        help="Model override (default: claude-sonnet-4-6 for anthropic hosted mode)",
     )
     parser.add_argument("--output-json", type=str, default="argus_report.json")
     parser.add_argument("--output-md", type=str, default="Argus_Audit_Report.md")

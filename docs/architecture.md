@@ -8,10 +8,10 @@
 ## Core Trust Model
 
 ```
-LLM (Claude / Gemini)          Formal Verifier (Lean 4 / Dafny)
-         ↓                                    ↓
-      ADVISOR                              AUTHORITY
-   (generates candidates)            (proves or rejects)
+LLM (Claude)                   Formal Verifier (Lean 4 / Dafny)
+        ↓                                     ↓
+     ADVISOR                               AUTHORITY
+  (generates candidates)             (proves or rejects)
 
 Claude proposes. Lean disposes. Argus enforces.
 ```
@@ -195,8 +195,8 @@ Fail-closed invariants:
 |:---|:---|
 | Anthropic end-to-end runs | 9/9 (3 files × 3 runs) |
 | False positives | 0 |
-| Gemini backward-compat | 9/9 (same verdicts) |
-| Test suite | 83/83 passing |
+| Historical Gemini comparison artifacts | archived in `artifacts/phase3/` |
+| Test suite | 204/204 passing |
 | Fail-closed scenarios | 14/14 tested |
 | Provenance coverage | 100% (all artifacts tagged) |
 | Anthropic latency advantage | 1.9–8.4× faster than Gemini |

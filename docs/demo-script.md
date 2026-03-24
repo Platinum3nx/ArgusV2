@@ -154,9 +154,9 @@ def transfer(s, a):              def transfer(s, a):
 ### Screen
 - Architecture diagram (from `docs/architecture.md` or a clean slide)
 - Key metrics overlay:
-  - "83/83 tests passing"
+  - "204/204 tests passing"
   - "0 false positives across 18+ validation runs"
-  - "1.9–8.4× faster than Gemini baseline"
+  - "3/3 live demo runs archived as fallback artifacts"
 - Final positioning statement
 
 ### Narration

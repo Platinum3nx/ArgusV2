@@ -2,7 +2,7 @@
 
 ## Trust model
 Argus uses a **prove-before-trust** model:
-- LLMs (Anthropic/Gemini) are advisors for discovery, proof hints, and repair suggestions.
+- Anthropic Claude is the advisor for discovery, proof hints, and repair suggestions in the hosted release.
 - Lean/Dafny verifiers are the authority for safety claims.
 - Verdicts are fail-closed: verifier/runtime errors cannot produce VERIFIED.
 

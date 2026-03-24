@@ -5,14 +5,14 @@
 |---|---|---|---|
 | CI failure rate | GitLab pipelines | >5% ERROR over 24h | inspect provider/verifier failures |
 | Verdict drift | `argus_report.json` trend | sudden spike in VULNERABLE | validate recent code/policy changes |
-| Provider availability | job logs | repeated timeout/config errors | rotate key, switch provider, retry |
+| Provider availability | job logs | repeated timeout/config errors | rotate token/key, retry, or defer merge until service recovers |
 | Artifact completeness | CI artifacts list | missing required outputs | inspect CLI run and permissions |
 
 ## Incident playbooks
 ### Provider outage / key failure
 1. Confirm `ConfigurationError` details from logs.
 2. Verify CI variable exists and is masked.
-3. Switch provider (`LLM_PROVIDER=gemini`) if Anthropic outage; re-run.
+3. Re-run after restoring Anthropic proxy availability or rotating the proxy credential.
 4. Keep merge gate blocking until successful rerun.
 
 ### Verifier/runtime failure
